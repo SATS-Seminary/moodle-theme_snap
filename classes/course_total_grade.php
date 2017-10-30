@@ -46,42 +46,10 @@ class course_total_grade extends \grade_report_overview {
     protected $isstudent = false;
 
     /**
-     * @var \context_course
-     */
-    protected $coursecontext;
-
-    /**
-     * show student ranks
-     */
-    public $showrank;
-
-    /**
-     * show grade percentages
-     */
-    public $showpercentage;
-
-    /**
-     * Show range
-     */
-    public $showrange = true;
-
-    /**
-     * Show grades in the report, default true
-     * @var bool
-     */
-    public $showgrade = true;
-
-    /**
      * Decimal points to use for values in the report, default 2
      * @var int
      */
     public $decimals = 2;
-
-    /**
-     * Show letter grades in the report, default false
-     * @var bool
-     */
-    public $showlettergrade = false;
 
     /**
      * Constructor. Get course grade for specific user and course.
@@ -101,10 +69,8 @@ class course_total_grade extends \grade_report_overview {
 
         $this->courseid  = $course->id;
         $this->course = $course;
-        $this->coursecontext = \context_course::instance($course->id);
-
-        $this->showrank = array();
-        $this->showrank['any'] = false;
+        $this->context = \context_course::instance($course->id);
+        $this->gradebookroles = $CFG->gradebookroles;
 
         $this->showtotalsifcontainhidden = array();
 
@@ -112,29 +78,13 @@ class course_total_grade extends \grade_report_overview {
         $this->teachercourses = array();
         $roleids = explode(',', get_config('moodle', 'gradebookroles'));
 
-        $this->showrank[$course->id] = grade_get_setting($course->id, 'report_overview_showrank', !empty($CFG->grade_report_overview_showrank));
-        if ($this->showrank[$course->id]) {
-            $this->showrank['any'] = true;
-        }
-
         $this->showtotalsifcontainhidden[$course->id] = grade_get_setting($course->id, 'report_overview_showtotalsifcontainhidden', $CFG->grade_report_overview_showtotalsifcontainhidden);
 
         foreach ($roleids as $roleid) {
-            if (user_has_role_assignment($user->id, $roleid, $this->coursecontext->id)) {
+            if (user_has_role_assignment($user->id, $roleid, $this->context->id)) {
                 $this->isstudent = true;
             }
         }
-
-        $this->showpercentage  = grade_get_setting($this->courseid, 'report_user_showpercentage', !empty($CFG->grade_report_user_showpercentage));
-        $this->showhiddenitems = grade_get_setting($this->courseid, 'report_user_showhiddenitems', !empty($CFG->grade_report_user_showhiddenitems));
-
-        $this->showgrade       = grade_get_setting($this->courseid, 'report_user_showgrade', !empty($CFG->grade_report_user_showgrade));
-        $this->showrange       = grade_get_setting($this->courseid, 'report_user_showrange', !empty($CFG->grade_report_user_showrange));
-
-        $this->showweight = grade_get_setting($this->courseid, 'report_user_showweight',
-            !empty($CFG->grade_report_user_showweight));
-
-        $this->showlettergrade = grade_get_setting($this->courseid, 'report_user_showlettergrade', !empty($CFG->grade_report_user_showlettergrade));
 
         // The default grade decimals is 2
         $defaultdecimals = 2;
@@ -143,41 +93,35 @@ class course_total_grade extends \grade_report_overview {
         }
         $this->decimals = grade_get_setting($this->courseid, 'decimalpoints', $defaultdecimals);
 
-        // The default range decimals is 0
-        $defaultrangedecimals = 0;
-        if (property_exists($CFG, 'grade_report_user_rangedecimals')) {
-            $defaultrangedecimals = $CFG->grade_report_user_rangedecimals;
-        }
-        $this->rangedecimals = grade_get_setting($this->courseid, 'report_user_rangedecimals', $defaultrangedecimals);
-
     }
 
     /**
      * Get course total grade.
      * @param bool $studentcoursesonly
-     * @return string
+     * @return array
      * @throws \coding_exception
      */
     public function get_course_total($studentcoursesonly = true) {
-        global $USER, $DB;
+        global $USER;
+
+        // Default 'empty' output.
+        $output = array("value" => '-', "percentage" => '-');
 
         if ($studentcoursesonly && !$this->isstudent) {
-            return '';
+            return $output;
         }
 
-        if (!$this->course->visible && !has_capability('moodle/course:viewhiddencourses', $this->coursecontext)) {
+        if (!$this->course->visible && !has_capability('moodle/course:viewhiddencourses', $this->context)) {
             // The course is hidden and the user isn't allowed to see it
-            return '';
+            return $output;
         }
 
         if (!has_capability('moodle/user:viewuseractivitiesreport', context_user::instance($this->user->id)) &&
-            ((!has_capability('moodle/grade:view', $this->coursecontext) || $this->user->id != $USER->id) &&
-                !has_capability('moodle/grade:viewall', $this->coursecontext))
+            ((!has_capability('moodle/grade:view', $this->context) || $this->user->id != $USER->id) &&
+                !has_capability('moodle/grade:viewall', $this->context))
         ) {
-            return '';
+            return $output;
         }
-
-        $canviewhidden = has_capability('moodle/grade:viewhidden', $this->coursecontext);
 
         // Get course grade_item
         $course_item = grade_item::fetch_course_item($this->course->id);
@@ -186,6 +130,17 @@ class course_total_grade extends \grade_report_overview {
         $course_grade = new grade_grade(array('itemid' => $course_item->id, 'userid' => $this->user->id));
         $course_grade->grade_item =& $course_item;
         $finalgrade = $course_grade->finalgrade;
+
+        // Return error when grade needs updating.
+        if ($course_grade->grade_item->needsupdate) {
+            return array("value" => get_string('error'), "percentage" => '-');
+        }
+
+        $canviewhidden = has_capability('moodle/grade:viewhidden', $this->context);
+        // Return '-' values when grade is hidden and user cannot view.
+        if (!$canviewhidden && $course_grade->is_hidden()) {
+            return $output;
+        }
 
         if (!$canviewhidden and !is_null($finalgrade)) {
             if ($course_grade->is_hidden()) {
@@ -210,81 +165,12 @@ class course_total_grade extends \grade_report_overview {
             }
         }
 
+        // Percentage grade for use with progressbar.js.
+        $percentage = round(grade_format_gradevalue($finalgrade,
+                $course_grade->grade_item,
+                true, GRADE_DISPLAY_TYPE_PERCENTAGE));
 
-        if ($this->showgrade) {
-            if ($course_grade->grade_item->needsupdate) {
-                return get_string('error');
-            } else if ($course_grade->is_hidden()) {
-                if ($this->canviewhidden) {
-                    return grade_format_gradevalue($finalgrade,
-                        $course_grade->grade_item,
-                        true);
-                } else {
-                    return '-';
-                }
-            } else {
-                return grade_format_gradevalue($finalgrade,
-                    $course_grade->grade_item,
-                    true);
-            }
-        }
-
-        // Range
-        if ($this->showrange) {
-            return $course_grade->grade_item->get_formatted_range(GRADE_DISPLAY_TYPE_REAL, $this->rangedecimals);
-        }
-
-        // Percentage
-        if ($this->showpercentage) {
-            if ($course_grade->grade_item->needsupdate) {
-                return get_string('error');
-            } else if ($course_grade->is_hidden()) {
-                if ($this->canviewhidden) {
-                    return grade_format_gradevalue($finalgrade, $course_grade->grade_item, true, GRADE_DISPLAY_TYPE_PERCENTAGE);
-                } else  {
-                    return '-';
-                }
-            } else {
-                return grade_format_gradevalue($finalgrade, $course_grade->grade_item, true, GRADE_DISPLAY_TYPE_PERCENTAGE);
-            }
-        }
-
-        // Lettergrade
-        if ($this->showlettergrade) {
-            if ($course_grade->grade_item->needsupdate) {
-                return get_string('error');
-            } else if ($course_grade->is_hidden()) {
-                if ($this->canviewhidden) {
-                    return grade_format_gradevalue($finalgrade, $course_grade->grade_item, true, GRADE_DISPLAY_TYPE_LETTER);
-                } else {
-                    return '-';
-                }
-            } else {
-                return grade_format_gradevalue($finalgrade, $course_grade->grade_item, true, GRADE_DISPLAY_TYPE_LETTER);
-            }
-        }
-
-        // Rank
-        if ($this->showrank) {
-            if ($course_grade->grade_item->needsupdate) {
-                return get_string('error');
-            } elseif ($course_grade->is_hidden()) {
-                return '-'; // Rank doesn't seem to care about canviewhidden in the user report.
-            } else if (is_null($finalgrade)) {
-                // no grade, no rank
-                return '-';
-            } else {
-                /// find the number of users with a higher grade
-                $sql = "SELECT COUNT(DISTINCT(userid))
-                                  FROM {grade_grades}
-                                 WHERE finalgrade > ?
-                                       AND itemid = ?
-                                       AND hidden = 0";
-                $rank = $DB->count_records_sql($sql, array($course_grade->finalgrade, $course_grade->grade_item->id)) + 1;
-
-                return "$rank/".$this->get_numusers(false); // total course users
-            }
-        }
-        return grade_format_gradevalue($finalgrade, $course_grade->grade_item, true, GRADE_DISPLAY_TYPE_DEFAULT);
+        $value = grade_format_gradevalue($finalgrade, $course_grade->grade_item);
+        return array("value" => $value, "percentage" => $percentage);
     }
 }

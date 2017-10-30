@@ -20,7 +20,7 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 @include media-breakpoint-up(md) {
-    #moodle-blocks {
+    #moodle-blocks > aside {
         column-count: 2;
         column-gap: 5%;
         column-width: 45%;
@@ -40,10 +40,6 @@
 
 .block h3 {
     font-size: $font-size-h6;
-}
-
-a.skip-block {
-    display: none;
 }
 
 /* remove block actions, always display blocks when displayed */
@@ -88,7 +84,7 @@ a.skip-block {
 #page-mod-book-view,
 #page-mod-quiz-review,
 #page-mod-quiz-attempt {
-    #moodle-blocks {
+    #moodle-blocks > aside {
         -webkit-column-count: 1;
         -moz-column-count: 1;
         column-count: 1;
@@ -97,13 +93,15 @@ a.skip-block {
             display: none;
         }
 
+        .block__fake,
         .block_fake,
         .block_settings {
             display: block;
         }
 
+        .block__fake,
         .block_fake {
-            margin-top: 2em;
+            margin-top: 1rem;
         }
     }
 }
@@ -145,7 +143,6 @@ body.path-site .block.block_settings {
 .block_navigation .block_tree li.item_with_icon > p img,
 .block_settings .block_tree li.item_with_icon > p img {
     top: 0.15em;
-    opacity: 0.7;
     position: relative;
 }
 
@@ -196,9 +193,13 @@ body.path-site .block.block_settings {
         display: none;
     }
 
-    .header {
+    & > .card-block {
+        padding-left: 2%;
+        padding-right: 2%;
+    }
+
+    .card-title {
         visibility: hidden;
-        height: 1.5em;
     }
 }
 
@@ -210,14 +211,13 @@ body.path-site .block.block_settings {
     overflow-x: hidden;
     z-index: 13;
     right: 0;
-    padding-top: 2em;
     border-left: 1px solid #eee;
     transition: right 0.4s ease-in-out;
 }
 
 .block .header .title .commands {
     width: 100%;
-    font-size: small;
+    font-size: $font-size-sm;
 }
 
 .block_rss_client ul.list li {

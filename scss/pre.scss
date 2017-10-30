@@ -24,6 +24,11 @@
 // Snap specific overrides to Boost settinsg from
 // theme/boost/scss/bootstrap/variables.scss
 
+$font-size-root: 18px;
+$font-size-lg:   1.25rem;
+$font-size-sm:   .75rem;
+$font-size-xs:   .6rem;
+
 // This needs some investigation of issues around IE11 and Moodle's autoprefixer implementaion.
 //$enable-flex:               true;
 $enable-rounded:            false;
@@ -36,12 +41,9 @@ $brand-info:            #03A9F4;
 $body-bg:              #fff;
 $body-color:            #565656;
 
-$font-family-base:        "Roboto", "Fira Sans", "Segoe UI", "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, sans-serif;
-$font-family-sans-serif: $font-family-base;
-$font-family-serif:       Georgia, "Times New Roman", Times, serif;
+$font-family-system:      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !default;
+$font-family-sans-serif:  "Roboto", $font-family-system;
 $font-family-monospace:   Monaco, Menlo, Consolas, "Courier New", monospace;
-
-$font-family-feature: $font-family-sans-serif;
 
 $headings-font-weight:    300;
 $headings-color:          $body-color;
@@ -50,6 +52,7 @@ $modal-backdrop-bg:           #fff;
 $modal-backdrop-opacity:      .8;
 
 $breadcrumb-divider: "/";
+$breadcrumb-divider-rtl: '\\';
 
 $state-success-text:             $brand-success;
 $state-success-bg:               fade-out($brand-success, 0.9);
@@ -66,39 +69,24 @@ $state-warning-border:           fade-out($brand-warning, 0.9);
 $state-danger-text:              $brand-danger;
 $state-danger-bg:                fade-out($brand-danger, 0.9);
 $state-danger-border:            fade-out($brand-danger, 0.9);
-/*
-$btn-font-weight:                300;
 
-$btn-default-color:              $brand-primary;
-$btn-default-bg:                 transparent;
-$btn-default-border:             $brand-primary;
+$footer-color-bg:                #f1f0ee;
 
-$btn-primary-color:              $brand-primary;
-$btn-primary-bg:                 transparent;
-$btn-primary-border:             $brand-primary;
+$user-content-max-width:         43.5em;
 
-$btn-success-color:              $brand-success;
-$btn-success-bg:                 transparent;
-$btn-success-border:             $brand-success;
+// -------------------------
+// Colour variables for resources and activities.
+// -------------------------
 
-$btn-info-color:                 $brand-info;
-$btn-info-bg:                    transparent;
-$btn-info-border:                $brand-info;
+$color-word:                         #03A9F4; // Blue.
+$color-powerpoint:                   #ff7300; // Orange.
+$color-excel:                        #009e51; // Green.
+$color-pdf:                          #F44336; // Red.
+$color-audio:                        #8BC34A; // Green.
+$color-video:                        #55B5CC; // Blue.
+$color-code:                         #f0652a; // Orange.
 
-$btn-warning-color:              $brand-warning;
-$btn-warning-bg:                 transparent;
-$btn-warning-border:             $brand-warning;
-
-$btn-danger-color:               $brand-danger;
-$btn-danger-bg:                  transparent;
-$btn-danger-border:              $brand-danger;
-
-$border-radius:                  0px;
-$border-radius-lg:               0px;
-$border-radius-sm:               0px;
-
-$btn-border-radius:              4px;
-$btn-border-radius-lg:           6px;
-$btn-border-radius-sm:           2px;
-
-*/
+$color-communication:                #8BC34A; // Foums, Chat
+$color-assignment:                   #03A9F4; // Assignment, workshop
+$color-quiz:                         #FFA000; // Quiz, choice, feedback
+$color-wiki:                         #009688; // Wiki, glossary

@@ -84,12 +84,6 @@ section#region-main
     }
 }
 
-.ie.path-course-view section#region-main > .singlebutton input[type="submit"] {
-    background-image: url("[[pix:theme|edit_for_ie]]");
-    background-size: 23px;
-    background-position: left center;
-}
-
 .section .filler {
     display: none;
 }
@@ -115,6 +109,47 @@ section#region-main
 // -------------------------
 #coursetools {
     @include clearfix;
+}
+
+// -------------------------
+// Progressbar.js circles in course dashboard.
+// -------------------------
+.snap-progress-circle {
+    width: 75%;
+    margin: 0 auto;
+    position: relative;
+    border-radius: 100%;
+
+    &.snap-progressbar-link {
+        &:hover,
+        &:focus {
+            background-color: #eee;
+        }
+        .progressbar-text:hover{
+                text-decoration: underline;
+        }
+    }
+
+    .progressbar-text{
+        font-size: 1.3em;
+        font-family: $font-family-system;
+        a,
+        a:visited {
+         color: $brand-primary;
+        }
+        a:focus,
+        a:hover {
+            color: darken($brand-primary, 8%);
+        }
+    }
+}
+
+#snap-student-dashboard {
+    padding: 1em 0;
+
+    .userpicture {
+        margin-top: 5%;
+    }
 }
 
 #coursetools-list {
@@ -228,7 +263,7 @@ li.section:focus {
 }
 
 .sectionname {
-    padding-top: 0;
+    padding: .5rem 0;
     margin-top: 0;
     white-space: normal !important;
 }
@@ -246,7 +281,6 @@ li.section:focus {
 }
 
 .snap-section-editing {
-    visibility: hidden;
     max-width: 100%;
     min-width: 0;
     width: auto;
@@ -264,7 +298,10 @@ li.section:focus {
         height: 2em;
         padding: 0.1em 0.3em;
         text-align: center;
-        &:hover {
+        overflow: hidden;
+        &:hover,
+        &.snap-show,
+        &[aria-pressed="true"] {
             background-color: $gray-lighter;
         }
     }
@@ -296,12 +333,19 @@ li.section:focus {
         background-image: url([[pix:core|t/delete]]);
     }
 
-    .snap-highlight.snap-marker:after {
+    .snap-highlight[aria-pressed="false"]:after {
         background-image: url([[pix:core|i/marker]]);
     }
 
-    .snap-highlight.snap-marked:after {
+    .snap-highlight[aria-pressed="true"]:after {
         background-image: url([[pix:core|i/marked]]);
+    }
+
+    a.ajaxing:after {
+        @include ajaxing(block, relative, 20px, 6px);
+        background-image: none !important;
+        margin: 0 auto;
+        top: 6px;
     }
 
     .loadingstat {
@@ -310,8 +354,34 @@ li.section:focus {
 
 }
 
-.snap-dropzone {
-    visibility: hidden;
+#snap-modchooser-modal {
+    .modal-header {
+        border-bottom: none;
+    }
+
+    .snap-modchooser-addlink {
+        display: block;
+        height: 90px;
+        overflow: hidden;
+        font-size: .8em;
+        font-family: $font-family-system;
+        font-weight: 500;
+        @include alakazam;
+
+        &:hover,
+        &:focus {
+            transform: scale(1.1);
+        }
+
+        img {
+            margin: 0.5em 0;
+        }
+
+    }
+
+    .snap-modchooser-help {
+        text-align: left;
+    }
 }
 
 .snap-dropzone {
@@ -361,17 +431,6 @@ li.section:focus {
 /* Landing page does not have renderer, so markup is different. */
 #page-site-index .section-modchooser-link {
     border-color: white;
-}
-
-// Do not show elements requiring js until js is classed as loaded.
-.snap-course-listening {
-    .snap-section-editing {
-        visibility: visible;
-    }
-
-    .snap-dropzone {
-        visibility: visible;
-    }
 }
 
 // get rid of js cursor style applied to the whole commands area
@@ -500,18 +559,19 @@ body.format-flexpage .singlebutton {
         }
     }
 }
+// Bootstrap navtabs do not require margin.
+.section {
+    ul,
+    ol {
+        &.nav-tabs {
+            margin: 0;
+        }
+    }
+}
 
 // -------------------------
 // Activity & Resource styles
 // -------------------------
-
-// -------------------------
-// Reset divs to display as block level elements.
-// -------------------------
-.section .activity .activityinstance,
-.section .activity .activityinstance div {
-    display: block;
-}
 
 // -------------------------
 //  Assets in snap.
@@ -522,7 +582,7 @@ body.format-flexpage .singlebutton {
     padding: 0;
     margin: 0 auto;
     height: auto;
-    font-family: $font-family-base;
+    font-family: $font-family-system;
     background-color: #fff;
     border: 1px solid $gray-lighter;
     border-top-width: 0.3em;
@@ -541,7 +601,7 @@ body.format-flexpage .singlebutton {
     }
 
     .snap-assettype {
-        font-size: small;
+        font-size: $font-size-sm;
         text-transform: uppercase;
     }
 
@@ -616,7 +676,7 @@ body.format-flexpage .singlebutton {
 
     .asset-wrapper,
     .activityinstance {
-        padding: 0;
+        padding: 0.5em 0;
     }
 }
 
@@ -699,33 +759,40 @@ body.format-flexpage .singlebutton {
     margin: 0;
 }
 
-.snap-image-image {
+.snap-resource-figure {
     position: relative;
 
-    .snap-image-link {
-        display: block;
-    }
-
-    .snap-image-summary,
-    .snap-image-title {
+    .snap-expand-link {
+        display: inline-block;
         position: absolute;
-        bottom: 0;
-        display: block;
-        width: 100%;
-        background-color: rgba(255,255,255,0.9);
-        padding: 0 4%;
-        font-size: 1em;
+        top: 0.5rem;
+        left: 0.5rem;
+
+        img {
+            border-radius: 100%;
+            border: 1px solid white;
+            width: 1.75rem;
+            height: 1.75rem;
+            transition: all .4s ease-in-out;
+            background-color: white;
+        }
+
+        &:hover,
+        &:focus {
+
+            img {
+                transform: scale(1.1);
+                border-color: $gray-light;
+            }
+        }
     }
 
-    .snap-image-title {
-        text-align: center;
-    }
-
-    .snap-image-summary {
-        position: relative;
-        margin-top: -3em;
+    .snap-resource-figure-caption {
+        padding: 0.5em 0;
+        color: $gray;
     }
 }
+
 
 // -------------------------
 // Snap resource
@@ -785,13 +852,13 @@ body.snap-resource-card li.snap-resource {
     &.snap-mime-writer,
     &.snap-mime-oth,
     &.snap-mime-text {
-        border-top-color: #03A9F4;
+        border-top-color: $color-word;
         background-image: url([[pix:core|/f/document]]);
     }
 
     &.snap-mime-powerpoint,
     &.snap-mime-impress {
-        border-top-color: #ff7300;
+        border-top-color: $color-powerpoint;
         background-image: url([[pix:core|/f/powerpoint]]);
     }
 
@@ -799,7 +866,7 @@ body.snap-resource-card li.snap-resource {
     &.snap-mime-chart,
     &.snap-mime-database,
     &.snap-mime-calc {
-        border-top-color: #009e51;
+        border-top-color: $color-excel;
         background-image: url([[pix:core|/f/spreadsheet]]);
     }
 
@@ -807,7 +874,7 @@ body.snap-resource-card li.snap-resource {
     &.snap-mime-pdf,
     &.snap-mime-eps,
     &.snap-mime-flash {
-        border-top-color: #F44336;
+        border-top-color: $color-pdf;
         background-image: url([[pix:core|/f/pdf]]);
     }
 
@@ -819,7 +886,7 @@ body.snap-resource-card li.snap-resource {
     &.snap-mime-mp3,
     &.snap-mime-wav,
     &.snap-mime-audio {
-        border-top-color: #8BC34A;
+        border-top-color: $color-audio;
         background-image: url([[pix:core|/f/audio]]);
     }
 
@@ -829,7 +896,7 @@ body.snap-resource-card li.snap-resource {
     &.snap-mime-quicktime,
     &.snap-mime-mpeg,
     &.snap-mime-avi {
-        border-top-color: #55B5CC;
+        border-top-color: $color-video;
         background-image: url([[pix:core|/f/video]]);
     }
 
@@ -851,7 +918,6 @@ body.snap-resource-card li.snap-resource {
         background-image: url([[pix:core|/f/book]]);
     }
 
-    &.modtype_imscp,
     &.modtype_scorm {
         background-image: url([[pix:core|/f/scorm]]);
     }
@@ -879,6 +945,11 @@ body.snap-resource-card li.snap-resource {
     }
 }
 
+// Clear none-cards after floated cards.
+.snap-resource-card li.activity {
+    clear: left;
+}
+
 // Resources to full width on tiny screen.
 @include media-breakpoint-down(sm) {
     body.snap-resource-card li.snap-resource {
@@ -887,11 +958,8 @@ body.snap-resource-card li.snap-resource {
         height: auto;
         background-image: none !important;
 
-        .activityinstance {
-            width: 75%;
-            .activityicon {
-                display: inline;
-            }
+        .activityinstance .activityicon {
+            display: inline;
         }
 
         .snap-asset-actions {
@@ -933,13 +1001,13 @@ body.snap-resource-card li.snap-resource {
     &.modtype_forum,
     &.modtype_chat,
     &.modtype_hsuforum {
-        border-top-color: #8BC34A;
+        border-top-color: $color-communication;
     }
 
     &.modtype_assign,
     &.modtype_assignment,
     &.modtype_workshop {
-        border-top-color: #03A9F4;
+        border-top-color: $color-assignment;
     }
 
     &.modtype_choice,
@@ -948,13 +1016,13 @@ body.snap-resource-card li.snap-resource {
     &.modtype_survey,
     &.modtype_questionnaire,
     &.modtype_lesson {
-        border-top-color: #FFA000;
+        border-top-color: $color-quiz;
     }
 
     &.modtype_data,
     &.modtype_glossary,
     &.modtype_wiki {
-        border-top-color: #009688;
+        border-top-color: $color-wiki;
     }
 
     &.modtype_collaborate {
@@ -978,7 +1046,7 @@ body.snap-resource-card li.snap-resource {
     text-align: center;
     margin: 1em 0;
     background-color: transparent;
-    font-family: $font-family-base;
+    font-family: $font-family-system;
 }
 
 #page-site-index {
@@ -1019,7 +1087,7 @@ body.snap-resource-card li.snap-resource {
 .snap-group-tag,
 .snap-grouping-tag {
     text-align: right;
-    font-size: small;
+    font-size: $font-size-sm;
     margin-bottom: 0.5em;
 
     a {
@@ -1033,10 +1101,10 @@ body.snap-resource-card li.snap-resource {
 }
 
 // Activity dues date.
-.snap-due-date {
-    @extend .tag-default;
+a.snap-due-date {
     font-size: 1em;
-    border-left-color: white;
+    border-radius: 1em;
+    padding: 0.5em 1em;
 }
 
 
@@ -1045,7 +1113,7 @@ body.snap-resource-card li.snap-resource {
 .snap-draft-tag,
 .snap-current-tag {
     font-size: small;
-    font-family: $font-family-base;
+    font-family: $font-family-system;
     background-color: #eee;
     margin: 0.5em 0;
     padding: 0.5em;
@@ -1053,6 +1121,11 @@ body.snap-resource-card li.snap-resource {
     .availabilityinfo {
         display: inline;
         margin-left: 0.5em;
+    }
+
+    .svg-icon {
+        width: 1.3rem;
+        height: auto;
     }
 
     ul {
@@ -1077,7 +1150,7 @@ body.snap-resource-card li.snap-resource {
 .snap-draft-tag,
 .snap-current-tag {
     display: none !important; // SHAME - overcome bad overspecificity...
-    font-size: small;
+    font-size: $font-size-sm;
 }
 
 // show draft tag if parent has draft or class.
@@ -1089,13 +1162,18 @@ body.snap-resource-card li.snap-resource {
 // Show current tag if parent has current class.
 .current .snap-current-tag {
     display: block !important; // SHAME - overcome bad overspecificity...
-    color: white;
-    background-color: $brand-success;
+    color: $brand-success;
 }
 
+// Draft hide/show.
+.snap-asset {
+    .editing_show {
+        display: none;
+    }
+}
 
 // Assets with draft tag.
-li.draft {
+.snap-asset.draft {
     border-top-color: #eee !important;
 
     .activityinstance {
@@ -1121,7 +1199,7 @@ li.draft {
     }
 
     // Draft assets inside hidden section....
-    li.draft .activityinstance {
+    .snap-asset.draft .activityinstance {
             opacity: 1;
     }
 }
@@ -1138,49 +1216,25 @@ li.draft {
 }
 
 /* Completion actions */
-@keyframes circleajax {
-    0% {
-        border-top-color: rgba(100,100,100,1);
-        border-right-color: rgba(50,50,50,0.25);
-        border-bottom-color: rgba(50,50,50,0.25);
-        border-left-color: rgba(50,50,50,0.25);
-    }
-    25% {
-        border-top-color: rgba(50,50,50,0.25);
-        border-right-color: rgba(100,100,100,1);
-        border-bottom-color: rgba(50,50,50,0.25);
-        border-left-color: rgba(50,50,50,0.25);
-    }
-    50% {
-        border-top-color: rgba(50,50,50,0.25);
-        border-right-color: rgba(50,50,50,0.25);
-        border-bottom-color: rgba(100,100,100,1);
-        border-left-color: rgba(50,50,50,0.25);
-    }
-    75% {
-        border-top-color: rgba(50,50,50,0.25);
-        border-right-color: rgba(50,50,50,0.25);
-        border-bottom-color: rgba(50,50,50,0.25);
-        border-left-color: rgba(100,100,100,1);
-    }
-    100% {
-        border-top-color: rgba(100,100,100,1);
-        border-right-color: rgba(50,50,50,0.25);
-        border-bottom-color: rgba(50,50,50,0.25);
-        border-left-color: rgba(50,50,50,0.25);
-    }
-}
+
 span.autocompletion img,
 form.togglecompletion {
     position: relative;
     width: 20px;
     height: 20px;
+    margin: 0;
 }
+
 form.togglecompletion {
-    input {
-        &[type="image"] {
-            width: 100%;
-            height: 100%;
+    .btn.btn-link {
+        padding: 0;
+        border: 0 none transparent;
+        img.icon {
+            padding: 0;
+            margin-right: 6px;
+            width: 20px;
+            height: 20px;
+            max-width: none;
         }
     }
     @include alakazam;
@@ -1192,27 +1246,7 @@ form.togglecompletion {
 
     &.ajaxing {
         &:after {
-            content:'';
-            display: block;
-            position: absolute;
-            width: calc(100% + 8px);
-            height: calc(100% + 8px);
-            margin-top: -4px;
-            margin-left: -4px;
-            top: 0px;
-            left: 0px;
-            border: solid;
-            border-width: 6px;
-            border-radius: 50%;
-            box-sizing: border-box;
-            border-top-color: rgba(50,50,50,1);
-            border-right-color: rgba(50,50,50,0.25);
-            border-bottom-color: rgba(50,50,50,0.25);
-            border-left-color: rgba(50,50,50,0.25);
-            animation-name: circleajax;
-            animation-duration: 2s;
-            animation-iteration-count: infinite;
-            animation-timing-function: linear;
+            @include ajaxing(block, absolute, 20px, 6px);
         }
         div {
             display: none;
@@ -1234,7 +1268,6 @@ form.togglecompletion {
 
 // All the editing options in one region.
 .snap-asset-actions {
-    visibility: hidden;
     position: absolute;
     bottom: 0;
     left: 0;
@@ -1264,6 +1297,15 @@ form.togglecompletion {
         margin: 0;
     }
 
+    .dropdown-toggle.snap-edit-asset-more.ajaxing {
+        &:after {
+            @include ajaxing(inline-block, relative, 26px, 7px);
+        }
+        img {
+            display: none;
+        }
+    }
+
     .svg-icon {
         border-radius: 100%;
         border: 1px solid white;
@@ -1289,12 +1331,6 @@ form.togglecompletion {
         font-size: 0.8em;
     }
 }
-// Only show these actions once all listeners applied.
-.snap-course-listening {
-    .snap-asset-actions {
-        visibility: visible;
-    }
-}
 
 .snap-resource {
     .snap-asset-actions {
@@ -1309,14 +1345,6 @@ form.togglecompletion {
         }
     }
 }
-
-// Draft hide/show.
-.dropdown-menu {
-    .editing_show {
-        display: none;
-    }
-}
-
 
 /* reset some moodle shame */
 .moodle-actionmenu,
@@ -1473,7 +1501,7 @@ input.titleeditor {
 span.editinstructions {
     box-shadow: none;
     border: 0;
-    font-family: $font-family-base;
+    font-family: $font-family-system;
 }
 
 /* forum unread posts button */
@@ -1494,38 +1522,6 @@ span.editinstructions {
     padding-left: 0;
 }
 
-// -------------------------
-// Course footer.
-// -------------------------
-
-#snap-course-footer {
-    margin: 2em auto -2em; // pull the sitewide footer up if we have a course footer
-    padding: 1em 4%;
-    background-color: #f1f0ee;
-}
-
-#course_recent_updates {
-    h3 {
-        font-size: 1em;
-        clear: both;
-    }
-
-    .head {
-        .date,
-        .name {
-            display: inline;
-        }
-
-        .date {
-            float: right;
-            font-size: small;
-        }
-    }
-
-    .info.bold {
-        font-weight: inherit;
-    }
-}
 
 // -------------------------
 // Course completion settings page.
@@ -1557,18 +1553,71 @@ span.editinstructions {
     margin: 0.5rem 0 0.5rem 0.5rem;
 }
 
+/**
+ * Fixes to recent course activity page.
+ * Note - excuse the awful CSS used here but terribly inconsistent markup across modules necessitates it.
+ */
+#page-course-recent #region-main div.generalbox {
+    td,
+    > div {
+        font-family: $font-family-system;
+        font-size: $font-size-base;
+        margin-top: 0.5rem;
+
+        // Workshop - this is the best way we can possibly target the workshop divs as sadly only one div has
+        // a class (submission).
+        &[style],
+        &[style] + div.submission {
+            padding: 0 !important; // Please forgive !important - required to remove inline style in workshop.
+        }
+
+        // Glossary.
+        div.glossary-activity-content {
+            float: left;
+            margin-left: 10px;
+        }
+
+        // Questionnaire.
+        span div a img,
+        // Glossary.
+        > div a img,
+        // Workshop.
+        > a img {
+            margin-left: 25px;
+        }
+
+        + div.submission {
+            // Workshop data positioning.
+            margin-left: 10px;
+            // Get rid of bold title in workshop.
+            strong {
+                font-weight: 300;
+            }
+        }
+    }
+
+    table.forum-recent {
+        // Forum - get rid of bold title.
+        div.title.bold {
+            font-weight: 300;
+        }
+    }
+}
+
 // -------------------------
 // Course recent activity icons - set size to same as avatars.
 // -------------------------
 
 #page-course-recent {
-    img.icon.smallicon {
-        width: 35px;
-        height: 35px;
-    }
 
     h3 {
         margin-bottom: 0;
+
+        & > img.icon.smallicon {
+            width: 35px;
+            height: 35px;
+        }
+
     }
 
     #region-main td.userpicture {
@@ -1661,7 +1710,7 @@ span.editinstructions {
     margin: 1em 0;
     clear: both;
     border: 2px dashed $gray-lighter;
-    font-family: $font-family-base;
+    font-family: $font-family-system;
     text-align: center;
     display:none;
 }
@@ -1712,12 +1761,9 @@ span.editinstructions {
     text-transform: capitalize;
     color: #fff !important;
     display: inline-block;
-    background-size: 1.5em 1.5em;
-    background-position: 0 center;
-    background-repeat: no-repeat;
-    padding-left: 1.7em; // Magic number for icon
+    padding: 1em;
     margin-left: 4%;
-    width: 68.2%;
+    width: 50%;
 }
 
 .snap-footer-alert-cancel {
@@ -1737,7 +1783,12 @@ span.editinstructions {
     }
 }
 
-
+// Small screen moving cancel link.
+@include media-breakpoint-down(md) {
+    .snap-footer-alert-cancel {
+        margin-right: 3em;
+    }
+}
 
 // Body class when moving
 .snap-move-inprogress {
@@ -1809,7 +1860,7 @@ span.editinstructions {
           border: 2px dashed $gray-light;
           font-size: 2em;
           font-color: $gray;
-          font-family: $font-family-base;
+          font-family: $font-family-system;
           text-align: center;
           cursor: pointer;
       }
@@ -1818,7 +1869,6 @@ span.editinstructions {
 #snap-light-box {
     display: none;
     position: fixed;
-    box-sizing: border-box;
     top: 0;
     left: 0;
     right: 0;
@@ -1838,7 +1888,7 @@ span.editinstructions {
         right: 0.5em;
     }
 
-    .icon-close:before {
+    .snap-icon-close:before {
         background: transparent url([[pix:theme|close_x]]) no-repeat 50% 50%;
     }
 
@@ -1857,4 +1907,20 @@ span.editinstructions {
       overflow-y: auto;
       max-height: 80vh;
   }
+}
+
+// Adding support for bootstrap 4 progress bar.
+.dndupload-progress-outer {
+    @extend .progress;
+    display: block;
+}
+
+.dndupload-progress-inner {
+    @extend .progress-bar;
+    display: block;
+}
+
+// Fix urlselect in grade report.
+.path-grade-report #maincontent + .urlselect {
+    left: 71vw;
 }

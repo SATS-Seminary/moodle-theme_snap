@@ -25,14 +25,11 @@
 /**
  * Main snap initialising function.
  */
-define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'theme_snap/util', 'theme_snap/personal_menu',
-        'theme_snap/responsive_video', 'theme_snap/cover_image'],
-    function($, bsjq, log, Headroom, util, personalMenu, responsiveVideo, coverImage) {
+define(['jquery', 'core/log', 'theme_snap/headroom', 'theme_snap/util', 'theme_snap/personal_menu',
+        'theme_snap/cover_image', 'theme_snap/progressbar'],
+    function($, log, Headroom, util, personalMenu, coverImage, ProgressBar) {
 
         'use strict';
-
-        // Use bootstrap modified jquery (tooltips).
-        $ = bsjq;
 
         M.theme_snap = M.theme_snap || {};
 
@@ -264,7 +261,7 @@ define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'th
         };
 
         /**
-         * listen for hash changes / popstates.
+         * Listen for hash changes / popstates.
          */
         var listenHashChange = function(courseLib) {
             var lastHash = location.hash;
@@ -283,6 +280,62 @@ define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'th
                     }
                 }
                 lastHash = newHash;
+            });
+        };
+
+        /**
+         * Course footer recent activity dom re-order.
+         */
+        var recentUpdatesFix = function() {
+            $('#snap-course-footer-recent-activity .info').each(function() {
+                $(this).appendTo($(this).prev());
+            });
+            $('#snap-course-footer-recent-activity .head .name').each(function() {
+                $(this).prependTo($(this).closest( ".head" ));
+            });
+        };
+
+        /**
+         * Apply progressbar.js for circular progress displays.
+         */
+        var progressbarcircle = function() {
+            $('.js-progressbar-circle').each(function() {
+                var circle = new ProgressBar.Circle(this, {
+                    color: 'inherit', // @gray.
+                    easing: 'linear',
+                    strokeWidth: 6,
+                    trailWidth: 3,
+                    duration: 1400,
+                    text: {
+                        value: '0'
+                    }
+                });
+
+                var value = ($(this).attr('value') / 100);
+                var endColor = '#8BC34A'; // green @brand-success.
+                if (value === 0 || $(this).attr('value') === '-') {
+                  circle.setText('-');
+                } else {
+                  if ($(this).attr('value') < 50) {
+                      endColor = '#FF9800'; // @brand-warning orange.
+                  }
+                  else {
+                      endColor = '#8BC34A'; // green @brand-success.
+                  }
+                  circle.setText($(this).attr('value') +'<small>%</small>');
+                }
+
+                circle.animate(value, {
+                    from: {
+                        color: '#999' // @gray-light.
+                    },
+                    to: {
+                        color: endColor
+                    },
+                    step: function(state, circle) {
+                        circle.path.setAttribute('stroke', state.color);
+                    }
+                });
             });
         };
 
@@ -451,14 +504,14 @@ define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'th
              * @param {int} userId
              */
             snapInit: function(courseConfig, pageHasCourseContent, siteMaxBytes, forcePassChange,
-                               messageBadgeCountEnabled, userId) {
+                               messageBadgeCountEnabled, userId, sitePolicyAcceptReqd) {
 
                 // Set up.
                 M.cfg.context = courseConfig.contextid;
                 M.snapTheme = {forcePassChange: forcePassChange};
 
                 // General AMD modules.
-                personalMenu.init();
+                personalMenu.init(sitePolicyAcceptReqd);
 
                 // Course related AMD modules (note, site page can technically have course content too).
                 if (pageHasCourseContent) {
@@ -483,13 +536,29 @@ define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'th
                     applyBlockHash(); // change location hash if necessary
                     bodyClasses(); // add body classes
 
+                    // Add a class to the body to show js is loaded.
+                    $('body').addClass('snap-js-loaded');
+                    // Apply progressbar.js for circluar progress display.
+                    progressbarcircle();
+                    // Course footer recent updates dom fixes.
+                    recentUpdatesFix();
+
                     coverImage(courseConfig.shortname, siteMaxBytes);
+
+                    // Allow deeplinking to bs tabs on snap settings page.
+                    if ($('#page-admin-setting-themesettingsnap').length) {
+                        var tabHash = location.hash;
+                        // Check link is to a tab hash.
+                        if (tabHash && $('.nav-link[href="' + tabHash + '"]').length) {
+                            $('.nav-link[href="' + tabHash + '"]').tab('show');
+                            $(window).scrollTop(0);
+                        }
+                    }
 
                     if ($('body').hasClass('snap-fixy-open')) {
                         personalMenu.update();
                     }
 
-                    // SL - 19th aug 2014 - resposive video and snap search in exceptions.
                     // SHAME - make section name creation mandatory
                     if ($('#page-course-editsection.format-topics').length) {
                         var usedefaultname = document.getElementById('id_usedefaultname'),
@@ -498,7 +567,7 @@ define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'th
                         usedefaultname.checked = false;
                         sname.required = "required";
                         sname.focus();
-                        $('#id_name + span').css('display', 'none');
+                        $('#id_usedefaultname').parent().css('display', 'none');
 
                         // Enable the cancel button.
                         $('#id_cancel').on('click', function() {
@@ -507,13 +576,15 @@ define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'th
                         });
                     }
 
-                    // Book mod print button.
-                    if ($('#page-mod-book-view').length) {
+                    // Book mod print button, only show if print link already present.
+                    if ($('#page-mod-book-view a[href*="mod/book/tool/print/index.php"]').length) {
                         var urlParams = getURLParams(location.href);
-                        $('.block_book_toc').append('<p>' +
-                            '<hr><a target="_blank" href="/mod/book/tool/print/index.php?id=' + urlParams.id + '">' +
-                            M.util.get_string('printbook', 'booktool_print') +
-                            '</a></p>');
+                        if (urlParams) {
+                            $('[data-block="_fake"]').append('<p>' +
+                                '<hr><a target="_blank" href="/mod/book/tool/print/index.php?id=' + urlParams.id + '">' +
+                                M.util.get_string('printbook', 'booktool_print') +
+                                '</a></p>');
+                        }
                     }
 
                     var mod_settings_id_re = /^page-mod-.*-mod$/; // e.g. #page-mod-resource-mod or #page-mod-forum-mod
@@ -532,8 +603,6 @@ define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'th
                             '#id_general + #id_general', // Turnitin duplicate ID bug.
                             '#id_content',
                             '#page-mod-choice-mod #id_optionhdr',
-                            '#page-mod-assign-mod #id_availability',
-                            '#page-mod-assign-mod #id_submissiontypes',
                             '#page-mod-workshop-mod #id_gradingsettings',
                             '#page-mod-choicegroup-mod #id_miscellaneoussettingshdr',
                             '#page-mod-choicegroup-mod #id_groups',
@@ -543,8 +612,12 @@ define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'th
 
                         $('#mform1 > fieldset').not(vital).wrapAll('<div class="snap-form-advanced col-md-4" />');
 
-                        // Add expand all to advanced column
+                        // Add expand all to advanced column.
                         $(".snap-form-advanced").append($(".collapsible-actions"));
+                        // Add collapsed to all fieldsets in advanced, except on course edit page.
+                        if (!$('#page-course-edit').length) {
+                            $(".snap-form-advanced fieldset").addClass('collapsed');
+                        }
 
                         // Sanitize required input into a single fieldset
                         var main_form = $("#mform1 fieldset:first");
@@ -571,12 +644,21 @@ define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'th
                             }
                         }
 
+                        // Resources - put description in common mod settings.
+                        var description = $("#page-mod-resource-mod [data-fieldtype='editor']").closest('.form-group');
+                        var showdescription = $("#page-mod-resource-mod [id='id_showdescription']").closest('.form-group');
+                        $("#page-mod-resource-mod .snap-form-advanced #id_modstandardelshdr .fcontainer").append(description);
+                        $("#page-mod-resource-mod .snap-form-advanced #id_modstandardelshdr .fcontainer").append(showdescription);
+
+                        // Assignment - put due date in required, and attatchments in common settings.
+                        var filemanager = $("#page-mod-assign-mod [data-fieldtype='filemanager']").closest('.form-group');
+                        var duedate = $("#page-mod-assign-mod [for='id_duedate']").closest('.form-group');
+                        $("#page-mod-assign-mod .snap-form-advanced #id_modstandardelshdr .fcontainer").append(filemanager);
+                        $("#page-mod-assign-mod .snap-form-required .fcontainer").append(duedate);
+
                         var savebuttons = $("#mform1 > .form-group:last");
                         $(main_form).append(savebuttons);
                     }
-
-                    // Makes video responsive.
-                    responsiveVideo.init();
 
                     // Conversation counter for user badge.
                     if (messageBadgeCountEnabled) {
@@ -588,11 +670,6 @@ define(['jquery', 'theme_snap/bootstrap', 'core/log', 'theme_snap/headroom', 'th
                             }
                         );
                     }
-
-                    $(window).on('load', function() {
-                        // Add a class to the body to show js is loaded.
-                        $('body').addClass('snap-js-loaded');
-                    });
                 });
             }
         };

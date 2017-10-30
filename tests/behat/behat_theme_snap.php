@@ -380,24 +380,13 @@ class behat_theme_snap extends behat_base {
         }
 
         // See if the first node is visible and if so click it.
-        if ($this->is_node_visible($linknode)) {
+        if ($this->is_node_visible($linknode, self::REDUCED_TIMEOUT)) {
             $linknode->click();
             return;
         }
 
-        // The first node on the page isn't visible so we are going to have to get all nodes with the same xpath.
-        // Extract xpath from the first node we found.
-        $xpath = str_replace("\n", '', $linknode->getXpath());
-        $matches = [];
-        if (preg_match_all('|^\(//html/(.*)(?=\)\[1\]$)|', $xpath, $matches) !== false) {
-            $xpath = $matches[1][0];
-        } else {
-            throw new coding_exception('Failed to extract xpath from '.$xpath);
-        }
-
-        // Now get all nodes.
         /** @var NodeElement[] $linknodes */
-        $linknodes = $this->find_all('xpath', $xpath);
+        $linknodes = $this->find_all('named_partial', ['link', behat_context_helper::escape($link)]);
 
         // Cycle through all nodes and if just one of them is visible break loop.
         foreach ($linknodes as $node) {
@@ -405,7 +394,7 @@ class behat_theme_snap extends behat_base {
                 // We've already tested the first node, skip it.
                 continue;
             }
-            if ($this->is_node_visible($node, self::REDUCED_TIMEOUT)) {
+            if ($node->isVisible()) {
                 $node->click();
                 return;
             }
@@ -444,6 +433,16 @@ class behat_theme_snap extends behat_base {
     }
 
     /**
+     * Whilst editing a section, set the section name.
+     * @param string $name
+     * @Given /^I set the section name to "(?P<name_string>(?:[^"]|\\")*)"$/
+     */
+    public function i_set_section_name_to($name) {
+        $this->execute('behat_forms::i_set_the_field_to', ['name[customize]', '1']);
+        $this->execute('behat_forms::i_set_the_field_to', ['name[value]', $name]);
+    }
+
+    /**
      * Restrict a course section by date.
      * @param int $section
      * @param string $date
@@ -453,8 +452,9 @@ class behat_theme_snap extends behat_base {
         $datetime = strtotime($date);
         $this->i_go_to_course_section($section);
         $this->click_visible_link('Edit section');
-        $this->i_wait_until_is_visible('.snap-form-advanced', 'css_element');
-        $this->execute('behat_forms::i_set_the_field_to', ['name', 'Topic '.$date.' '.$section]);
+        $this->i_wait_until_is_visible('.editor_atto', 'css_element');
+        $this->execute('behat_forms::i_set_the_field_to', ['name[customize]', '1']);
+        $this->execute('behat_forms::i_set_the_field_to', ['name[value]', 'Topic '.$date.' '.$section]);
         $this->add_date_restriction($datetime, 'Save changes');
     }
 
@@ -521,10 +521,12 @@ class behat_theme_snap extends behat_base {
      * @Given /^I should see availability info "(?P<str>(?:[^"]|\\")*)"$/
      */
     public function i_see_availabilityinfo($str, $baseselector = '') {
+        $str = trim($str);
         $nodes = $this->find_all('xpath', $baseselector.'//div[contains(@class, \'snap-conditional-tag\')]');
         foreach ($nodes as $node) {
             /** @var NodeElement $node */
-            if ($node->getText() === $str) {
+            $nodetext = trim($node->getText());
+            if (stripos($nodetext, $str) !== false) {
                 return;
             }
         }
@@ -828,6 +830,7 @@ class behat_theme_snap extends behat_base {
     public function course_is_favorited($shortname) {
         /* @var behat_general $general */
         $general = behat_context_helper::get('behat_general');
+        $this->ensure_element_does_not_exist('.snap-icon-toggle.favoritetoggle.ajaxing', 'css_element');
         $general->should_exist('.courseinfo[data-shortname="'.$shortname.'"] .favoritetoggle[aria-pressed="true"]', 'css_element');
     }
 
@@ -838,6 +841,7 @@ class behat_theme_snap extends behat_base {
     public function course_is_not_favorited($shortname) {
         /* @var behat_general $general */
         $general = behat_context_helper::get('behat_general');
+        $this->ensure_element_does_not_exist('.snap-icon-toggle.favoritetoggle.ajaxing', 'css_element');
         $general->should_not_exist('.courseinfo[data-shortname="'.$shortname.'"] .favoritetoggle[aria-pressed="true"]', 'css_element');
     }
 
@@ -1179,6 +1183,7 @@ class behat_theme_snap extends behat_base {
         $mainwindow = $session->getWindowName();
         $logoutwindow = 'Log out window';
         $session->executeScript('window.open("'.$CFG->wwwroot.'", "'.$logoutwindow.'")');
+        sleep(1); // Allow time for the window to open.
         $session->switchToWindow($logoutwindow);
         $this->i_log_out();
         $session->executeScript('window.close()');
@@ -1410,6 +1415,28 @@ class behat_theme_snap extends behat_base {
     }
 
     /**
+     * Marks an activity as complete.
+     * @param string $activityname
+     *
+     * @Given /^I mark the activity "(?P<activityname_string>(?:[^"]|\\")*)" as complete$/
+     */
+    public function i_mark_as_complete($activityname) {
+        $imgalt = 'Not completed: '.$activityname.'. Select to mark as complete.';
+        $this->execute('behat_general::i_click_on', ['img.icon[alt="'.$imgalt.'"]', 'css_element']);
+    }
+
+    /**
+     * Marks an activity as incomplete.
+     * @param string $activityname
+     *
+     * @Given /^I mark the activity "(?P<activityname_string>(?:[^"]|\\")*)" as incomplete$/
+     */
+    public function i_mark_as_incomplete($activityname) {
+        $imgalt = 'Completed: '.$activityname.'. Select to mark as not complete.';
+        $this->execute('behat_general::i_click_on', ['img.icon[alt="'.$imgalt.'"]', 'css_element']);
+    }
+
+    /**
      * Core step copied from completion/tests/behat/behat_completion.php to fix bug MDL-57452
      * Checks if the activity with specified name is marked as complete.
      *
@@ -1429,7 +1456,6 @@ class behat_theme_snap extends behat_base {
         $this->execute("behat_general::should_exist",
             array($xpathtocheck, "xpath_element")
         );
-
     }
 
     /**
@@ -1483,6 +1509,47 @@ class behat_theme_snap extends behat_base {
      */
     public function i_am_on_the_snap_jquery_bootstrap_test_page() {
         $this->getSession()->visit($this->locate_path('/theme/snap/tests/fixtures/test_jquery_bootstrap.php'));
+    }
+
+    /**
+     * @Given /^I have been redirected to the site policy page$/
+     */
+    public function i_am_redirected_to_site_policy_page() {
+        $currenturl = $this->getSession()->getCurrentUrl();
+        if (strpos($currenturl, 'user/policy.php') === false) {
+            $msg = 'User has not been redirected to site policy page';
+            throw new ExpectationException($msg, $this->getSession());
+        }
+    }
+
+    /**
+     * @Given /^I am currently on the default site home page$/
+     */
+    public function i_am_currently_on_the_site_home_page() {
+        global $CFG;
+
+        $currenturl = $this->getSession()->getCurrentUrl();
+        $currenturl = str_replace($CFG->wwwroot, '', $currenturl);
+        $currenturl = str_replace('index.php', '', $currenturl);
+
+        $expectedurl = $CFG->defaulthomepage == 0 ? '/' : '/my';
+
+        if ($currenturl !== $expectedurl) {
+            $msg = "Expected user to be on default site home page - currenturl is $currenturl and expected url ";
+            $msg .= "is $expectedurl";
+
+            throw new ExpectationException($msg, $this->getSession());
+        }
+    }
+
+    /**
+     * @Given /^I highlight section (?P<section_int>(?:\d+))$/
+     * @param int $section
+     */
+    public function i_highlight_section($section) {
+        $xpath = '//li[@id="section-'.$section.'"]//div[contains(@class, "snap-section-editing")]';
+        $xpath .='//a[contains(@class, "snap-highlight")][@aria-pressed="false"]';
+        $this->execute('behat_general::i_click_on', [$xpath, 'xpath_element']);
     }
 
 }

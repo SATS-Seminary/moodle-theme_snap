@@ -43,6 +43,16 @@ body:not(.behat-site) {
     border: none;
 }
 
+.snap-form-advanced .collapsible-actions .collapseexpand {
+    background: none;
+    padding: 0;
+}
+
+.snap-form-advanced .dndupload-message {
+    font-family: $font-family-system;
+    font-size: small;
+}
+
 .form-label .form-shortname {
     display: inline;
 }
@@ -161,6 +171,17 @@ body:not(.behat-site) {
 .fdescription.required {
     display: none;
 }
+// Style required asterix.
+fieldset abbr[title] {
+    font-size: xx-small;
+    text-decoration: none;
+    border: none;
+    &:after {
+        content: " " attr(title);
+        text-transform: lowercase;
+        text-transform: capitalize;
+    }
+}
 
 // Prevent toggler collapse on required section
 #id_general .fcontainer,
@@ -174,7 +195,7 @@ textarea {
 }
 
 .editor_atto_content_wrap {
-    border-color: #eee;
+    border-color: $gray-lighter;
 }
 
 
@@ -183,6 +204,19 @@ textarea {
 // -------------------------
 input[type="radio"] {
     max-width: none;
+    margin-right: .5rem;
+}
+
+// -------------------------
+// Radio & checkbox padding.
+// -------------------------
+input[type="radio"],
+input[type="checkbox"] {
+    margin-right: 0.25rem;
+}
+input[type="radio"],
+input[type="checkbox"] {
+    margin-right: 0.25rem;
 }
 
 // -------------------------
@@ -279,10 +313,10 @@ div.editor_atto_toolbar div.atto_group {
     max-width: 100%;
 }
 
-// Hide save & display for resources
-#page-mod-url-mod,
-#page-mod-page-mod,
-#page-mod-resource-mod {
+// Hide save & display for resources (except in single activity format).
+#page-mod-url-mod:not(.format-singleactivity),
+#page-mod-page-mod:not(.format-singleactivity),
+#page-mod-resource-mod:not(.format-singleactivity) {
     #id_submitbutton {
         display: none;
     }
@@ -349,6 +383,39 @@ div.editor_atto_toolbar div.atto_group {
     text-decoration: none;
 }
 
+// Colapse/expand toggle on forms.
+.mform fieldset {
+    &.collapsible {
+        legend a.fheader {
+            padding: 0;
+            display: block;
+            background: none;
+            margin-left: 0;
+
+            &:after {
+                font-family: FontAwesome;
+                line-height: 1.5;
+                content: "\f106"; // up arrow default.
+                float: right;
+                margin-right: .4rem; // magic number to line up with help icons.
+            }
+        }
+    }
+    &.collapsed legend a.fheader:after {
+        content: "\f107"; // down arrow to indicate can expand.
+    }
+}
+
+// Remove arrow on expand all link.
+.collapsible-actions .collapseexpand {
+    background: none;
+    padding-left: 0;
+}
+
+.snap-form-advanced legend {
+    font-size: 1rem;
+}
+
 @include media-breakpoint-up(lg) {
 
     #id_name {
@@ -364,26 +431,25 @@ div.editor_atto_toolbar div.atto_group {
 
     // All the non-essential form elements.
     .snap-form-advanced {
-        fieldset.collapsible legend a.fheader {
-            margin-left: -6px;
-        }
-
-        legend {
-            font-size: 1em;
-        }
 
         // FF select elements don't respect % max width.
         select {
-            max-width: 300px;
+            max-width: 200px !important;
         }
-
-
-        .collapsible-actions {
-            text-align: left;
-
-            .collapseexpand {
-                margin-left: -6px;
-            }
+        .ftoggler{
+            background-color: $gray-lighter;
+            padding: .3em .5em;
+        }
+        .collapsed .ftoggler{
+            background-color: transparent;
+        }
+        fieldset > .fcontainer {
+            border: 3px solid $gray-lighter;
+        }
+        // Make sure buttons fit container.
+        button,
+        .btn {
+            white-space: normal;
         }
     }
 }
@@ -403,6 +469,16 @@ div.editor_atto_toolbar div.atto_group {
         text-align: center;
     }
 
+    .snap-form-advanced {
+        select {
+            max-width: 140px !important;
+        }
+
+        input {
+            max-width: 140px !important;
+        }
+    }
+
 }
 
 @include media-breakpoint-down(sm) {
@@ -420,30 +496,16 @@ div.editor_atto_toolbar div.atto_group {
 }
 
 // -------------------------
-// Resource display form.
+// Enrolled Users filter
 // -------------------------
-#id_s_theme_snap_resourcedisplay {
-    @include make-row();
-    max-width: 100%;
-}
-#s_theme_snap_resourcedisplay_list,
-#s_theme_snap_resourcedisplay_card {
-    @include make-col(6);
-    text-align: center;
 
-    + br {
-        display: none;
-    }
-    &:before {
-        display: block;
+@include media-breakpoint-up(sm) {
+    #page-enrol-users #filterform > .fitem {
+            margin-right: 1rem;
+            margin-bottom: 1rem;
+
+            &:last-child {
+                display: block;
+        }
     }
 }
-
-
-#s_theme_snap_resourcedisplay_list:before {
-    content: url("[[pix:theme|list]]");
-}
-#s_theme_snap_resourcedisplay_card:before {
-    content: url("[[pix:theme|cards]]");
-}
-

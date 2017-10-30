@@ -72,7 +72,7 @@ function theme_snap_set_logo($css, $logo) {
     if (is_null($logo)) {
         $replacement = '';
     } else {
-        $replacement = "#snap-home.logo {background-image: url($logo);} #page-login-index .loginpanel h2{background-image: url($logo);}";
+        $replacement = "#snap-home.logo, .snap-logo-sitename {background-image: url($logo);}";
     }
     $css = str_replace($tag, $replacement, $css);
     return $css;
@@ -142,7 +142,7 @@ function theme_snap_send_file($context, $filearea, $args, $forcedownload, $optio
  */
 function theme_snap_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options = array()) {
 
-    if ($context->contextlevel == CONTEXT_SYSTEM && in_array($filearea, ['logo', 'favicon', 'fs_one_image', 'fs_two_image', 'fs_three_image'])) {
+    if ($context->contextlevel == CONTEXT_SYSTEM && in_array($filearea, ['logo', 'favicon', 'fs_one_image', 'fs_two_image', 'fs_three_image', 'slide_one_image', 'slide_two_image', 'slide_three_image'])) {
         $theme = theme_config::load('snap');
         return $theme->setting_file_serve($filearea, $args, $forcedownload, $options);
     } else if (($context->contextlevel == CONTEXT_SYSTEM || $context->contextlevel == CONTEXT_COURSE)
@@ -195,7 +195,7 @@ function theme_snap_get_main_scss_content($theme) {
         // This preset file was fetched from the file area for theme_snap and not theme_boost (see the line above).
         $scss .= $presetfile->get_content();
     } else {
-        $scss = '@import "moodle";';
+        $scss = '@import "boost";';
     }
 
     // Pre CSS - this is loaded AFTER any prescss from the setting but before the main scss.
@@ -225,9 +225,8 @@ function theme_snap_get_pre_scss($theme) {
     } else {
         $userfontsans .= ",";
     }
-    $fallbacksans = 'Roboto,"Fira Sans","Segoe UI","HelveticaNeue-Light",'
-        . '"Helvetica Neue Light","Helvetica Neue",Helvetica, Arial, sans-serif';
-    $settings['font-family-sans-serif'] = $userfontsans . $fallbacksans;
+    $fallbacksans = 'Roboto, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+    $settings['font-family-feature'] = $userfontsans . $fallbacksans;
 
     $userfontserif = $theme->settings->seriffont;
     if (empty($userfontserif) || in_array($userfontserif, ['Georgia', '"Georgia"'])) {

@@ -48,8 +48,7 @@ Feature: When the moodle theme is set to Snap, teachers can delete course resour
   @javascript
   Scenario: In read mode, on front page, admin can cancel / confirm delete activity.
     Given I log in as "admin" (theme_snap)
-    And I click on "#admin-menu-trigger" "css_element"
-    And I navigate to "Front page > Front page settings" in site administration
+    And I go to "/admin/settings.php?section=frontpagesettings"
     And I set the following fields to these values:
       | Include a topic section | 1 |
     And I am on site homepage
@@ -64,6 +63,9 @@ Feature: When the moodle theme is set to Snap, teachers can delete course resour
     And I click on ".snap-activity[data-type='Assignment'] a.js_snap_delete" "css_element"
     Then I should see asset delete dialog
     When I press "Delete Assign"
+    Then I should not see "Test assignment1"
+    # This is to test that the deletion persists.
+    And I reload the page
     Then I should not see "Test assignment1"
 
   @javascript
@@ -82,6 +84,10 @@ Feature: When the moodle theme is set to Snap, teachers can delete course resour
     And I click on ".snap-activity[data-type='Assignment'] a.js_snap_delete" "css_element"
     Then I should see asset delete dialog
     When I press "Delete Assign"
+    Then I should not see "Test assignment1" in the "#section-1" "css_element"
+    And I cannot see "Test assignment1" in course asset search
+    # This is to test that the deletion persists.
+    And I reload the page
     Then I should not see "Test assignment1" in the "#section-1" "css_element"
     And I cannot see "Test assignment1" in course asset search
 

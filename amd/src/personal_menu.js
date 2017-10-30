@@ -33,12 +33,21 @@ define(['jquery', 'core/log', 'core/yui', 'theme_snap/pm_course_cards', 'theme_s
 
             var self = this;
 
+            var redirectToSitePolicy = false;
+
             /**
              * Add deadlines, messages, grades & grading,  async'ly to the personal menu
              *
              * @author Stuart Lamour
              */
             this.update = function() {
+
+                // If site policy needs acceptance, then don't update, just redirect to site policy!
+                if (redirectToSitePolicy) {
+                    var redirect = M.cfg.wwwroot + '/user/policy.php';
+                    window.location = redirect;
+                    return;
+                }
 
                 // Update course cards with info.
                 courseCards.reqCourseInfo(courseCards.getCourseIds());
@@ -68,18 +77,22 @@ define(['jquery', 'core/log', 'core/yui', 'theme_snap/pm_course_cards', 'theme_s
                                 async: true,
                                 url: M.cfg.wwwroot + '/theme/snap/rest.php?action=get_' + type + '&contextid=' + M.cfg.context,
                                 success: function(data) {
-                                    if (ajaxNotify.ifErrorShowBestMsg(data)) {
-                                        return;
-                                    }
-                                    log.info('fetched ' + type);
-                                    if (util.supportsSessionStorage() && typeof(data.html) != 'undefined') {
-                                        window.sessionStorage[cache_key] = data.html;
-                                    }
-                                    // Note: we can't use .data because that does not manipulate the dom, we need the data
-                                    // attribute populated immediately so things like behat can utilise it.
-                                    // .data just sets the value in memory, not the dom.
-                                    $(container).attr('data-content-loaded', '1');
-                                    $(container).html(data.html);
+                                    ajaxNotify.ifErrorShowBestMsg(data).done(function(errorShown) {
+                                        if (errorShown) {
+                                            return;
+                                        } else {
+                                            // No errors, update sesion storage.
+                                            log.info('fetched ' + type);
+                                            if (util.supportsSessionStorage() && typeof(data.html) != 'undefined') {
+                                                window.sessionStorage[cache_key] = data.html;
+                                            }
+                                            // Note: we can't use .data because that does not manipulate the dom, we need the data
+                                            // attribute populated immediately so things like behat can utilise it.
+                                            // .data just sets the value in memory, not the dom.
+                                            $(container).attr('data-content-loaded', '1');
+                                            $(container).html(data.html);
+                                        }
+                                    });
                                 }
                             });
                         } catch (err) {
@@ -172,9 +185,12 @@ define(['jquery', 'core/log', 'core/yui', 'theme_snap/pm_course_cards', 'theme_s
             /**
              * Initialising function.
              */
-            this.init = function() {
+            this.init = function(sitePolicyAcceptReqd) {
+                redirectToSitePolicy = sitePolicyAcceptReqd;
                 applyListeners();
-                courseCards.init();
+                if (!redirectToSitePolicy) {
+                    courseCards.init();
+                }
             };
         };
 

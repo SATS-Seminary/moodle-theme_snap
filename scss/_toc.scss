@@ -78,6 +78,7 @@
     #course-toc,
     #region-main {
         padding-top: 1em;
+        outline: none;
     }
 
     /* TOC heading. */
@@ -88,10 +89,29 @@
 
     /* TOC list. */
     #chapters {
-      @include list-unstyled();
-      li {
-          margin-left: 0;
-      }
+        @include list-unstyled();
+        li {
+            margin-left: 0;
+            // Indicators for draft and current section.
+            &.draft,
+            &.current {
+                .chapter-title:before {
+                    content: " ";
+                    height: 14px;
+                    width: 14px;
+                    display: inline-block;
+                    margin-right: .35em;
+                    border-radius: 50%;
+                }
+            }
+            &.current .chapter-title:before{
+                background-color: $brand-success;
+            }
+            &.draft .chapter-title:before{
+                background-color: $brand-warning;
+            }
+        }
+
     }
 
     .toc-footer {
@@ -113,6 +133,8 @@
         content: '';
     }
 }
+
+
 
 // -------------------------
 // Display when toc is part of page header.
@@ -162,7 +184,7 @@
         text-align: right;
 
         a {
-            margin-left: 0.5em;
+            margin-right: 0.5em;
         }
     }
 }
@@ -172,7 +194,7 @@
 // -------------------------
 #toc-search {
     position: absolute;
-    top: 2em;
+    top: 1.25em;
     right: 0;
     max-width: 100%;
 
@@ -283,11 +305,6 @@
 }
 
 @include media-breakpoint-down(md) {
-    // Small screen moving cancel link.
-    .snap-footer-alert-cancel {
-        margin-right: 3em;
-    }
-
     #toc-mobile-menu-toggle {
         background: $gray-lighter url("[[pix:theme|burger]]") no-repeat 50% 50%;
         background-size: 1em;
@@ -304,7 +321,7 @@
     }
 
     #course-toc {
-        position: fixed;
+        position: fixed !important;
         right: 0;
         padding: 0 4%;
         margin: 0;
@@ -312,7 +329,6 @@
         background-color: transparent !important;
         @include alakazam();
         outline: none;
-
 
         #chapters,
         .toc-footer,
@@ -322,11 +338,13 @@
     }
 
     #course-toc.state-visible {
+        top: 0;
+        left: 0;
+        bottom: 0;
         display: block;
         width: 100%;
         height: 100%;
-        left: 0;
-        bottom: 0;
+        padding-top: 1em;
         background-color: white !important;
         overflow-y: scroll;
 
@@ -334,6 +352,7 @@
         .toc-footer {
             display: block;
             column-count: 1;
+            text-align: left;
         }
 
         #toc-mobile-menu-toggle {
@@ -348,6 +367,10 @@
     #toc-search,
     #toc-desktop-menu-heading{
         display: none;
+    }
+    // Small screen course tools and create new section links.
+    #page-header .toc-footer a {
+        display: block;
     }
 }
 

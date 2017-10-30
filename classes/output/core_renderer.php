@@ -26,6 +26,7 @@ namespace theme_snap\output;
 
 defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir.'/coursecatlib.php');
+require_once($CFG->dirroot.'/message/output/popup/lib.php');
 
 use stdClass;
 use context_course;
@@ -67,153 +68,6 @@ class core_renderer extends \theme_boost\output\core_renderer {
 
         return \theme_snap\local::course_coverimage_url($COURSE->id);
     }
-    public function course_footer() {
-        global $DB, $COURSE, $CFG, $PAGE;
-
-        // Note: This check will be removed for Snap 2.7.
-        if (empty($PAGE->theme->settings->coursefootertoggle)) {
-            return false;
-        }
-
-        $context = context_course::instance($COURSE->id);
-        $courseteachers = '';
-        $coursesummary = '';
-
-        $clist = new \course_in_list($COURSE);
-        $teachers = $clist->get_course_contacts();
-
-        if (!empty($teachers)) {
-            // Get all teacher user records in one go.
-            $teacherids = array();
-            foreach ($teachers as $teacher) {
-                $teacherids[] = $teacher['user']->id;
-            }
-            $teacherusers = $DB->get_records_list('user', 'id', $teacherids);
-
-            // Create string for teachers.
-            $courseteachers .= '<h6>'.get_string('coursecontacts', 'theme_snap').'</h6><div id=course_teachers>';
-            foreach ($teachers as $teacher) {
-                if (!isset($teacherusers[$teacher['user']->id])) {
-                    continue;
-                }
-                $teacheruser = $teacherusers [$teacher['user']->id];
-                $courseteachers .= $this->print_teacher_profile($teacheruser);
-            }
-            $courseteachers .= "</div>";
-        }
-        // If user can edit add link to manage users.
-        if (has_capability('moodle/course:enrolreview', $context)) {
-            if (empty($courseteachers)) {
-                $courseteachers = "<h6>".get_string('coursecontacts', 'theme_snap')."</h6>";
-            }
-            $courseteachers .= '<a class="btn btn-default btn-sm" href="'.$CFG->wwwroot.'/enrol/users.php?id='.
-                $COURSE->id.'">'.get_string('enrolledusers', 'enrol').'</a>';
-        }
-
-        if (!empty($COURSE->summary)) {
-            $coursesummary = '<h6>'.get_string('aboutcourse', 'theme_snap').'</h6>';
-            $formatoptions = new stdClass;
-            $formatoptions->noclean = true;
-            $formatoptions->overflowdiv = true;
-            $formatoptions->context = $context;
-            $coursesummarycontent = file_rewrite_pluginfile_urls($COURSE->summary,
-                'pluginfile.php', $context->id, 'course', 'summary', null);
-            $coursesummarycontent = format_text($coursesummarycontent, $COURSE->summaryformat, $formatoptions);
-            $coursesummary .= '<div id=course_about>'.$coursesummarycontent.'</div>';
-        }
-
-        // If able to edit add link to edit summary.
-        if (has_capability('moodle/course:update', $context)) {
-            if (empty($coursesummary)) {
-                $coursesummary = '<h6>'.get_string('aboutcourse', 'theme_snap').'</h6>';
-            }
-            $coursesummary .= '<a class="btn btn-default btn-sm" href="'.$CFG->wwwroot.'/course/edit.php?id='.
-                $COURSE->id.'#id_descriptionhdr">'.get_string('editsummary').'</a>';
-        }
-
-        // Get recent activities on mods in the course.
-        $courserecentactivities = $this->get_mod_recent_activity($context);
-        if ($courserecentactivities) {
-            $courserecentactivity = '<h6>'.get_string('recentactivity').'</h6>';
-            $courserecentactivity .= "<div id=course_recent_updates>";
-            if (!empty($courserecentactivities)) {
-                $courserecentactivity .= $courserecentactivities;
-            }
-            $courserecentactivity .= "</div>";
-        }
-        // If user can edit add link to moodle recent activity stuff.
-        if (has_capability('moodle/course:update', $context)) {
-            if (empty($courserecentactivities)) {
-                $courserecentactivity = '<h6>'.get_string('recentactivity').'</h6>';
-                $courserecentactivity .= get_string('norecentactivity');
-            }
-            $courserecentactivity .= '<div><a class="btn btn-default btn-sm" href="'.$CFG->wwwroot.'/course/recent.php?id='
-                .$COURSE->id.'">'.get_string('showmore', 'form').'</a></div>';
-        }
-
-        if (!empty($courserecentactivity)) {
-            $columns[] = $courserecentactivity;
-        }
-        if (!empty($courseteachers)) {
-            $columns[] = $courseteachers;
-        }
-        if (!empty($coursesummary)) {
-            $columns[] = $coursesummary;
-        }
-
-        // Logic for printing bootstrap grid.
-        if (empty($columns)) {
-            return '';
-        } else if (count($columns) == 1) {
-                $output  = '<div class="col-md-12">'.$columns[0].'</div>';
-        } else if (count($columns) >= 2 && !empty($courserecentactivity)) {
-            // Here we output recent updates any some other sections.
-            if (count($columns) > 2) {
-                $output  = '<div class="col-md-6">'.$columns[1].$columns[2].'</div>';
-            } else {
-                $output  = '<div class="col-md-6">'.$columns[1].'</div>';
-            }
-            $output .= '<div class="col-md-6">'.$columns[0].'</div>';
-        } else if (count($columns) == 2) {
-            $output  = '<div class="col-md-6">'.$columns[1].'</div>';
-            $output  .= '<div class="col-md-6">'.$columns[0].'</div>';
-        }
-
-        return $output;
-    }
-
-
-    /**
-     * Print teacher profile
-     * Prints a media object with the techers photo, name (links to profile) and desctiption.
-     *
-     * @param stdClass $user
-     * @return string
-     */
-    public function print_teacher_profile($user) {
-        global $CFG, $COURSE;
-
-        $userpicture = new user_picture($user);
-        $userpicture->link = false;
-        $userpicture->alttext = false;
-        $userpicture->size = 100;
-        $picture = $this->render($userpicture);
-
-        $fullname = '<a href="'.$CFG->wwwroot.'/user/profile.php?id='.$user->id.'">'.format_string(fullname($user)).'</a>';
-        $coursecontext = context_course::instance($COURSE->id);
-        $user->description = file_rewrite_pluginfile_urls($user->description,
-            'pluginfile.php', $coursecontext->id, 'user', 'profile', $user->id);
-        $description = format_text($user->description, $user->descriptionformat);
-
-        return "<div class='snap-media-object'>
-                $picture
-                <div class='snap-media-body'>
-                $fullname
-                $description
-                </div>
-                </div>";
-    }
-
 
     /**
      * Print links to more information for personal menu colums.
@@ -227,7 +81,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
     public function column_header_icon_link($langstring, $iconname, $url) {
         global $OUTPUT;
         $text = get_string($langstring, 'theme_snap');
-        $iconurl = $OUTPUT->pix_url($iconname, 'theme');
+        $iconurl = $OUTPUT->image_url($iconname, 'theme');
         $icon = '<img class="svg-icon" role="presentation" src="' .$iconurl. '">';
         $link = '<a class="snap-personal-menu-more" href="' .$url. '"><small>' .$text. '</small>' .$icon. '</a>';
         return $link;
@@ -246,7 +100,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
     public function mobile_menu_link($langstring, $iconname, $url) {
         global $OUTPUT;
         $alt = get_string($langstring, 'theme_snap');
-        $iconurl = $OUTPUT->pix_url($iconname, 'theme');
+        $iconurl = $OUTPUT->image_url($iconname, 'theme');
         $icon = '<img class="svg-icon" alt="' .$alt. '" src="' .$iconurl. '">';
         $link = '<a href="' .$url. '">' .$icon. '</a>';
         return $link;
@@ -262,57 +116,11 @@ class core_renderer extends \theme_boost\output\core_renderer {
      */
     public function social_menu_link($iconname, $url) {
         global $OUTPUT;
-        $iconurl = $OUTPUT->pix_url($iconname, 'theme');
+        $iconurl = $OUTPUT->image_url($iconname, 'theme');
         $icon = '<img class="svg-icon" title="' .$iconname. '" alt="' .$iconname. '" src="' .$iconurl. '">';
         $link = '<a href="' .$url. '" target="_blank">' .$icon. '</a>';
         return $link;
     }
-
-    public function get_mod_recent_activity($context) {
-        global $COURSE, $OUTPUT;
-        $viewfullnames = has_capability('moodle/site:viewfullnames', $context);
-        $recentactivity = array();
-        $timestart = time() - (86400 * 7); // 7 days ago.
-        if (optional_param('testing', false, PARAM_BOOL)) {
-            $timestart = time() - (86400 * 700); // 700 days ago for testing purposes.
-        }
-        $modinfo = get_fast_modinfo($COURSE);
-        $usedmodules = $modinfo->get_used_module_names();
-        if (empty($usedmodules)) {
-            // No used modules so return null string.
-            return '';
-        }
-        foreach ($usedmodules as $modname => $modfullname) {
-            // Each module gets it's own logs and prints them.
-            ob_start();
-            $hascontent = component_callback('mod_'. $modname, 'print_recent_activity',
-                    array($COURSE, $viewfullnames, $timestart), false);
-            if ($hascontent) {
-                $content = ob_get_contents();
-                if (!empty($content)) {
-                    $recentactivity[$modname] = $content;
-                }
-            }
-            ob_end_clean();
-        }
-
-        $output = '';
-        if (!empty($recentactivity)) {
-            foreach ($recentactivity as $modname => $moduleactivity) {
-                // Get mod icon, empty alt as title already there.
-                $img = html_writer::tag('img', '', array(
-                    'src' => $OUTPUT->pix_url('icon', $modname),
-                    'alt' => '',
-                ));
-                // Create media object for module activity.
-                $output .= "<div class='snap-media-object course-footer-update-$modname'>$img".
-                    "<div class=snap-media-body>$moduleactivity</div></div>";
-            }
-        }
-
-        return $output;
-    }
-
 
     /**
      * Settings link for opening the Administration menu, only shown if needed.
@@ -325,12 +133,12 @@ class core_renderer extends \theme_boost\output\core_renderer {
         if (!$settingslink->output) {
             return '';
         }
-        $iconurl = $OUTPUT->pix_url('gear', 'theme');
+        $iconurl = $OUTPUT->image_url('gear', 'theme');
         $gearicon = '<img src="' .$iconurl. '">';
         $url = '#inst' . $settingslink->instanceid;
         $attributes = array(
             'id' => 'admin-menu-trigger',
-            'class' => 'pull-right',
+            'class' => 'pull-right js-only',
             'data-toggle' => 'tooltip',
             'data-placement' => 'bottom',
             'title' => get_string('admin', 'theme_snap'),
@@ -342,7 +150,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
 
 
     /**
-     * Settings link for opening the Administration menu, only shown if needed.
+     * Link to genius, only shown if needed.
      * @param bb_dashboard_link $bblink
      *
      * @return string
@@ -521,13 +329,12 @@ class core_renderer extends \theme_boost\output\core_renderer {
         $title = '<h3>' .$title. '</h3>' .$content;
         $link = html_writer::link($url, $title);
 
-        $object = $image
-                . '<div class="snap-media-body">'
-                . '<h3>' .$link. '</h3>'
-                . $metastr
-                . '</div>';
-
-        return '<div class="snap-media-object '.$extraclasses.'">'.$object.'</div>';
+        $data = (object) [
+                'image' => $image,
+                'content' => $link.$metastr,
+                'class' => $extraclasses
+        ];
+        return $this->render_from_template('theme_snap/media_object', $data);
     }
 
 
@@ -544,6 +351,36 @@ class core_renderer extends \theme_boost\output\core_renderer {
         );
     }
 
+    /**
+     * Output moodle blocks and Snap wrapper with edit button.
+     * @return string
+     */
+    public function snap_blocks() {
+        global $COURSE, $OUTPUT, $PAGE;
+
+        $editblocks = '';
+
+        $oncoursepage = strpos($PAGE->pagetype, 'course-view') === 0;
+        $coursecontext = \context_course::instance($COURSE->id);
+        if ($oncoursepage && has_capability('moodle/course:update', $coursecontext)) {
+            $url = new \moodle_url('/course/view.php', ['id' => $COURSE->id, 'sesskey' => sesskey()]);
+            if ($PAGE->user_is_editing()) {
+               $url->param('edit', 'off');
+               $editstring = get_string('turneditingoff');
+            } else {
+                $url->param('edit', 'on');
+                $editstring = get_string('editcoursecontent', 'theme_snap');
+            }
+            $editblocks = '<div class="text-center"><a href="'.$url.'" class="btn btn-primary">'.$editstring.'</a></div><br>';
+        }
+
+        $output = '<div id="moodle-blocks" class="clearfix">';
+        $output .= $editblocks;
+        $output .= $OUTPUT->blocks('side-pre');
+        $output .= '</div>';
+
+        return $output;
+    }
 
     protected function render_callstoaction() {
 
@@ -595,6 +432,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
              return '';
         } else {
             $o = '<div class="callstoaction">';
+            $o .= $this->render_intelliboard();
             foreach ($columns as $column) {
                 $o .= '<section>' .$column. '</section>';
             }
@@ -690,12 +528,12 @@ class core_renderer extends \theme_boost\output\core_renderer {
         global $CFG;
 
         $output = '';
-        $loginurl = '#';
+        $loginurl = $CFG->wwwroot.'/login/index.php';
         $loginatts = [
             'aria-haspopup' => 'true',
             'class' => 'btn btn-default snap-login-button js-personal-menu-trigger',
         ];
-        if (!empty($CFG->alternateloginurl)) {
+        if (!empty($CFG->alternateloginurl) or !empty($CFG->theme_snap_disablequicklogin)) {
             $loginurl = $CFG->wwwroot.'/login/index.php';
             $loginatts = [
                 'class' => 'btn btn-default snap-login-button',
@@ -797,8 +635,8 @@ class core_renderer extends \theme_boost\output\core_renderer {
                     <form action='$wwwroot/login/index.php'  method='post'>
                     <div class=fixy-inner>
                     <div class=fixy-header>
-                    <a id='fixy-close' class='js-personal-menu-trigger pull-right snap-action-icon' href='#'>
-                        <i class='icon icon-close'></i><small>$cancel</small>
+                    <a id='fixy-close' class='js-personal-menu-trigger pull-right snap-action-icon snap-icon-close' href='#'>
+                        <small>$cancel</small>
                     </a>
                     <h1>$login</h1>
                     </div>
@@ -881,19 +719,19 @@ class core_renderer extends \theme_boost\output\core_renderer {
             }
             $courselist .= '</section>';
 
-            $menu = '<span class="hidden-xs">' .get_string('menu', 'theme_snap'). '</span>';
+            $menu = '<span class="hidden-xs-down">' .get_string('menu', 'theme_snap'). '</span>';
             $badge = $this->render_badge_count();
             $linkcontent = $menu.$picture.$badge;
             $attributes = array(
                 'aria-haspopup' => 'true',
-                'class' => 'js-personal-menu-trigger snap-my-courses-menu',
+                'class' => 'js-personal-menu-trigger snap-my-courses-menu js-only',
                 'id' => 'fixy-trigger',
                 'aria-controls' => 'primary-nav',
             );
 
             $output .= html_writer::link('#', $linkcontent, $attributes);
 
-            $close = get_string('close', 'theme_snap');
+            $close = get_string('closebuttontitle', 'moodle');
             $viewyourprofile = get_string('viewyourprofile', 'theme_snap');
             $realuserinfo = '';
             if (\core\session\manager::is_loggedinas()) {
@@ -906,8 +744,8 @@ class core_renderer extends \theme_boost\output\core_renderer {
             $output .= '<nav id="primary-nav" class="fixy toggle-details appear_enabled" tabindex="-1">
             <div class="fixy-inner">
             <div class="fixy-header">
-            <a id="fixy-close" class="js-personal-menu-trigger pull-right snap-action-icon" href="#">
-                <i class="icon icon-close"></i><small>'.$close.'</small>
+            <a id="fixy-close" class="js-personal-menu-trigger pull-right snap-action-icon snap-icon-close" href="#">
+                <small>'.$close.'</small>
             </a>
 
             <div id="fixy-user">'.$picture.'
@@ -964,6 +802,45 @@ class core_renderer extends \theme_boost\output\core_renderer {
     }
 
     /**
+     * Cover carousel.
+     * @return string
+     *
+    */
+    public function cover_carousel() {
+        global $PAGE;
+
+        if (empty($PAGE->theme->settings->cover_carousel)) {
+            return '';
+        }
+
+        $slidenames = array("slide_one", "slide_two", "slide_three");
+        $slides = array();
+        $i = 0;
+        foreach ($slidenames as $slidename) {
+            $image = $slidename . '_image';
+            $title = $slidename . '_title';
+            $subtitle = $slidename . '_subtitle';
+            if (!empty($PAGE->theme->settings->$image) && !empty($PAGE->theme->settings->$title)) {
+                $slide = (object) [
+                    'index' => $i++,
+                    'active' => '',
+                    'name' => $slidename,
+                    'image' => $PAGE->theme->setting_file_url($image, $image),
+                    'title' => $PAGE->theme->settings->$title,
+                    'subtitle' => $PAGE->theme->settings->$subtitle
+                ];
+                $slides[] = $slide;
+            }
+        }
+        if(empty($slides)) {
+            return '';
+        }
+        $slides[0]->active = 'active';
+        $data['slides'] = $slides;
+        return $this->render_from_template('theme_snap/carousel', $data);
+    }
+
+    /**
      * Get page heading.
      *
      * @param string $tag
@@ -986,7 +863,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
             // simply show -
             // My course
             // This is intentional.
-            $heading = $COURSE->fullname;
+            $heading = format_string($COURSE->fullname);
             $heading = html_writer::link($courseurl, $heading);
             $heading = html_writer::tag($tag, $heading);
         } else {
@@ -1007,7 +884,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
             $heading .= '<p class="snap-site-description">' . format_string($this->page->theme->settings->subtitle) . '</p>';
         }
         if ($this->page->user_is_editing() && $this->page->pagelayout == 'frontpage') {
-            $url = new moodle_url('/admin/settings.php', ['section' => 'themesettingsnap'], 'admin-fullname');
+            $url = new moodle_url('/admin/settings.php', ['section' => 'themesettingsnap']);
             $link = html_writer::link($url,
                             get_string('changefullname', 'theme_snap'),
                             ['class' => 'btn btn-default btn-sm']);
@@ -1141,14 +1018,15 @@ class core_renderer extends \theme_boost\output\core_renderer {
             $preview = '';
             $newsimage = '';
             if (!$imagestyle) {
-                $preview = html_to_text($message, 0, false);
+                $preview = format_text($message, $discussion->messageformat, ['context' => $context]);
+                $preview = html_to_text($preview, 0, false);
                 $preview = "<div class='news-article-preview'><p>".shorten_text($preview, 200)."</p>
                 <p class='text-right'>".$readmorebtn."</p></div>";
             } else {
                 $newsimage = '<div class="news-article-image toggle"'.$imagestyle.' title="'.
                     get_string('readmore', 'theme_snap').'"></div>';
             }
-            $close = get_string('close', 'theme_snap');
+            $close = get_string('closebuttontitle', 'moodle');
             $output .= <<<HTML
 <div class="news-article clearfix">
     {$newsimage}
@@ -1161,8 +1039,8 @@ class core_renderer extends \theme_boost\output\core_renderer {
     {$preview}
     <div class="news-article-message" tabindex="-1">
         {$message}
-        <div><hr><a class="snap-action-icon toggle" href="#">
-        <i class="icon icon-close"></i><small>{$close}</small></a></div>
+        <div><hr><a class="snap-action-icon snap-icon-close toggle" href="#">
+        <small>{$close}</small></a></div>
     </div>
 </div>
 HTML;
@@ -1290,11 +1168,11 @@ HTML;
         return $output;
     }
 
-    public function pix_url($imagename, $component = 'moodle') {
+    public function image_url($imagename, $component = 'moodle') {
         // Strip -24, -64, -256  etc from the end of filetype icons so we
         // only need to provide one SVG, see MDL-47082.
         $imagename = \preg_replace('/-\d\d\d?$/', '', $imagename);
-        return $this->page->theme->pix_url($imagename, $component);
+        return $this->page->theme->image_url($imagename, $component);
     }
 
     /**
@@ -1433,7 +1311,7 @@ HTML;
 
             $fsedit = '';
             if ($this->page->user_is_editing()) {
-                $url = new moodle_url('/admin/settings.php', ['section' => 'themesnapfeaturespots']);
+                $url = new moodle_url('/admin/settings.php?section=themesettingsnap#themesnapfeaturespots');
                 $link = html_writer::link($url, get_string('featurespotsedit', 'theme_snap'), ['class' => 'btn btn-primary']);
                 $fsedit = '<p class="text-center">'.$link.'</p>';
             }
@@ -1560,7 +1438,7 @@ HTML;
         // Featured courses quick edit link.
         $edit = '';
         if ($this->page->user_is_editing()) {
-            $url = new moodle_url('/admin/settings.php', ['section' => 'themesnapfeaturedcourses']);
+            $url = new moodle_url('/admin/settings.php?section=themesettingsnap#themesnapfeaturedcourses');
             $link = html_writer::link($url, get_string('featuredcoursesedit', 'theme_snap'), ['class' => 'btn btn-primary']);
             $edit = '<p class="text-center">'.$link.'</p>';
         }
@@ -1597,6 +1475,54 @@ HTML;
     }
 
     /**
+     * Return snap modchooser modal.
+     * @return string
+     */
+    protected function course_modchooser() {
+        global $OUTPUT, $COURSE;
+        // Check to see if user can add menus and there are modules to add.
+        if (!has_capability('moodle/course:manageactivities', context_course::instance($COURSE->id))
+                || !($modnames = get_module_types_names()) || empty($modnames)) {
+            return '';
+        }
+        // Retrieve all modules with associated metadata.
+        $sectionreturn = null;
+        $modules = get_module_metadata($COURSE, $modnames, $sectionreturn);
+
+        foreach ($modules as $mod) {
+            $help = !empty($mod->help) ? $mod->help : '';
+            $helptext = format_text($help, FORMAT_MARKDOWN);
+
+
+            if ($mod->archetype === MOD_ARCHETYPE_RESOURCE) {
+                $resources[] = (object) [
+                    'name' => $mod->name,
+                    'title' => $mod->title,
+                    'icon' => ''.$OUTPUT->image_url('icon', $mod->name),
+                    'link' => $mod->link .'&section=0', // Section is replaced by js.
+                    'help' => $helptext
+                ];
+            }
+            else {
+                $activities[] = (object) [
+                    'name' => $mod->name,
+                    'title' => $mod->title,
+                    'icon' => ''.$OUTPUT->image_url('icon', $mod->name),
+                    'link' => $mod->link .'&section=0', // Section is replaced by js.
+                    'help' => $helptext
+                ];
+            }
+        }
+
+        $data['tabs'] = (object) [
+             'activities' => $activities,
+             'resources' => $resources
+        ];
+
+        return $this->render_from_template('theme_snap/course_modchooser_modal', $data);
+    }
+
+    /**
      * Override parent function so that all courses (except the front page) skip the 'turn editing on' button.
      */
     protected function render_navigation_node(navigation_node $item) {
@@ -1609,6 +1535,269 @@ HTML;
                 return '';
             }
         }
-        return parent::render_navigation_node($item);
+
+        if ($item->key === 'courseadmin') {
+            $this->add_switchroleto_navigation_node($item);
+        }
+
+        return parent::render_navigation_node($item);;
     }
+
+    /**
+     * Adds a switch role menu to a navigation node.
+     * Inspiration taken from : lib/navigationlib.php
+     * https://github.com/moodle/moodle/commit/70b03eff02a261b16130c52aca5cd87ebd810b5e
+     *
+     * @param navigation_node $item
+     */
+    private function add_switchroleto_navigation_node(navigation_node $item) {
+        global $PAGE;
+
+        $course = $PAGE->course;
+        $coursecontext = context_course::instance($course->id);
+        // Switch roles
+        $roles = array();
+        $assumedrole = $this->in_alternative_role();
+        if ($assumedrole !== false) {
+            $roles[0] = get_string('switchrolereturn');
+        }
+
+        if (has_capability('moodle/role:switchroles', $coursecontext)) {
+            $availableroles = get_switchable_roles($coursecontext);
+            if (is_array($availableroles)) {
+                foreach ($availableroles as $key => $role) {
+                    if ($assumedrole == (int)$key) {
+                        continue;
+                    }
+                    $roles[$key] = $role;
+                }
+            }
+        }
+        if (is_array($roles) && count($roles) > 0) {
+            $switchroles = $item->add(get_string('switchroleto'), null, navigation_node::TYPE_CONTAINER, null, 'switchroleto');
+            if ((count($roles) == 1 && array_key_exists(0, $roles)) || $assumedrole !== false) {
+                $switchroles->force_open();
+            }
+            foreach ($roles as $key => $name) {
+                $url = new moodle_url('/course/switchrole.php', array(
+                    'id' => $course->id, 'sesskey' => sesskey(),
+                    'switchrole' => $key, 'returnurl' => $PAGE->url->out_as_local_url(false)));
+                $switchroles->add($name, $url, navigation_node::TYPE_SETTING, null, $key, new \pix_icon('i/switchrole', ''));
+            }
+        }
+    }
+
+    /**
+     * Determine whether the user is assuming another role
+     * Inspiration taken from : lib/navigationlib.php
+     * https://github.com/moodle/moodle/commit/70b03eff02a261b16130c52aca5cd87ebd810b5e
+     *
+     * This function checks to see if the user is assuming another role by means of
+     * role switching. In doing this we compare each RSW key (context path) against
+     * the current context path. This ensures that we can provide the switching
+     * options against both the course and any page shown under the course.
+     *
+     * @return bool|int The role(int) if the user is in another role, false otherwise
+     */
+    private function in_alternative_role() {
+        global $USER, $PAGE;
+
+        $course = $PAGE->course;
+        $coursecontext = context_course::instance($course->id);
+
+        if (!empty($USER->access['rsw']) && is_array($USER->access['rsw'])) {
+            if (!empty($this->page->context) && !empty($USER->access['rsw'][$this->page->context->path])) {
+                return $USER->access['rsw'][$this->page->context->path];
+            }
+            foreach ($USER->access['rsw'] as $key=>$role) {
+                if (strpos($coursecontext->path,$key)===0) {
+                    return $role;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Return Snap's logo url for login.mustache
+     *
+     * @param int $maxwidth not used in Snap.
+     * @param int $maxheight not used in Snap.
+     * @return moodle_url|false
+     */
+    public function get_logo_url($maxwidth = null, $maxheight = 200) {
+        global $PAGE, $CFG;
+        if (empty($PAGE->theme->settings->logo)) {
+            return false;
+        }
+
+        // Following code copied from  theme->setting_file_url but without the
+        // bit that strips the protocol from the url.
+
+        $itemid = theme_get_revision();
+        $filepath = $PAGE->theme->settings->logo;
+        $syscontextid = context_system::instance()->id;
+
+        $url = moodle_url::make_file_url("$CFG->httpswwwroot/pluginfile.php", "/$syscontextid/theme_snap/logo/$itemid".$filepath);
+        return $url;
+    }
+
+    /**
+     * Render intelliboard links in personal menu.
+     * @return string
+     */
+    protected function render_intelliboard() {
+        global $PAGE;
+        $o = '';
+        $links = '';
+
+        // Bail if no intelliboard.
+        if (!get_config('local_intelliboard')) {
+            return $o;
+        }
+
+        // Intelliboard adds links to the flatnav we use to check wich links to output.
+        $flatnav = $PAGE->flatnav->get_key_list();
+
+        // Student dashboard link.
+        if (in_array("intelliboard_student", $flatnav, true)) {
+            $node = $PAGE->flatnav->get("intelliboard_student");
+            $links .= $this->render_intelliboard_link($node->get_content(), $node->action(), 'intelliboard_learner');
+        }
+
+        // Instructor dashboard link.
+        if (in_array("intelliboard_instructor", $flatnav, true)) {
+            $node = $PAGE->flatnav->get("intelliboard_instructor");
+            $links .= $this->render_intelliboard_link($node->get_content(), $node->action(), 'intelliboard');
+        }
+
+        // Competency dashboard link.
+        if (in_array("intelliboard_competency", $flatnav, true)) {
+            $node = $PAGE->flatnav->get("intelliboard_competency");
+            $links .= $this->render_intelliboard_link($node->get_content(), $node->action(), 'intelliboard_competencies');
+        }
+
+        // No links to display.
+        if(!$links){
+            return $o;
+        }
+
+        $intelliboardheading = get_string('intelliboardroot', 'local_intelliboard');
+        $o = '<section id="snap-intelliboard-menu">';
+        $o .= '<h2>' .$intelliboardheading. '</h2>';
+        $o .= '<div id="snap-personal-menu-intelliboard">'
+                .$links.
+                '</div>';
+        $o .= '</section>';
+
+        return $o;
+    }
+
+    /**
+     * Render intelliboard link in personal menu.
+     * @param string $name of the link.
+     * @param moodle_url $url of the link.
+     * @param string $icon icon sufix.
+     * @return string
+     */
+    public function render_intelliboard_link($name, $url, $icon) {
+       global $OUTPUT;
+       $iconurl = $OUTPUT->image_url($icon, 'theme');
+       $img = '<img class="svg-icon" role="presentation" src="' .$iconurl. '">';
+       $o = '<a href=" '.$url.' ">' .$img.s($name). '</a><br>';
+       return $o;
+   }
+
+    /**
+     * Renders a wrap of the boost core notification popup area, which includes messages and notification popups
+     * @return string notification popup area.
+     */
+    protected function render_notification_popups() {
+        global $OUTPUT, $CFG;
+
+        // We only want the notifications bell, not the messages badge so temporarilly disable messaging to exclude it.
+        $messagingenabled = $CFG->messaging;
+        $CFG->messaging = false;
+        $navoutput = message_popup_render_navbar_output($OUTPUT);
+        $CFG->messaging = $messagingenabled;
+        if (empty($navoutput)) {
+            return '';
+        }
+        return $navoutput;
+    }
+
+    /*
+    * This renders the navbar.
+    * Uses bootstrap compatible html.
+    */
+   public function navbar() {
+       global $COURSE, $CFG;
+
+       require_once($CFG->dirroot.'/course/lib.php');
+
+       $breadcrumbs = '';
+       $courseitem = null;
+       $snapmycourses = html_writer::link('#', get_string('menu', 'theme_snap'), array('class' => 'js-personal-menu-trigger'));
+
+       foreach ($this->page->navbar->get_items() as $item) {
+           $item->hideicon = true;
+
+           // Remove link to current page - n.b. needs improving.
+           if ($item->action == $this->page->url) {
+               continue;
+           }
+
+           // For Admin users - When default home is set to dashboard, let admin access the site home page.
+           if($item->key === 'myhome' && has_capability('moodle/site:config', context_system::instance())) {
+               $breadcrumbs .= '<li class="breadcrumb-item">' .html_writer::link(new moodle_url('/', ['redirect' => 0]), get_string('sitehome')). '</li>';
+               continue;
+           }
+
+           // Remove link to home/dashboard as site name/logo provides the same link.
+           if ($item->key === 'home' || $item->key === 'myhome' || $item->key === 'dashboard') {
+               continue;
+           }
+
+           // Replace my courses none-link with link to snap personal menu.
+           if ($item->key === 'mycourses') {
+               $breadcrumbs .= '<li class="breadcrumb-item">' .$snapmycourses. '</li>';
+               continue;
+           }
+
+           if ($item->type == \navigation_node::TYPE_COURSE) {
+               $courseitem = $item;
+           }
+
+           if ($item->type == \navigation_node::TYPE_SECTION) {
+               if ($courseitem != null) {
+                   $url = $courseitem->action->out(false);
+                   $item->action = $courseitem->action;
+                   $sectionnumber = $this->get_section_for_id($item->key);
+
+                   // Append section focus hash only for topics and weeks formats because we can
+                   // trust the behaviour of these formats.
+                   if ($COURSE->format == 'topics' || $COURSE->format == 'weeks') {
+                       $url .= '#section-'.$sectionnumber;
+                       if ($item->text == get_string('general')) {
+                           $item->text = get_string('introduction', 'theme_snap');
+                       }
+                   } else {
+                       $url = course_get_url($COURSE, $sectionnumber);
+                   }
+                   $item->action = new moodle_url($url);
+               }
+           }
+
+           // Only output breadcrumb items which have links.
+           if ($item->action !== null) {
+               $link = html_writer::link($item->action, $item->text);
+               $breadcrumbs .= '<li class="breadcrumb-item">' .$link. '</li>';
+           }
+       }
+
+       if(!empty($breadcrumbs)) {
+           return '<div class="breadcrumb-nav" aria-label="breadcrumb">'.
+           '<ol class="breadcrumb">' .$breadcrumbs .'</ol></div>';
+       }
+   }
 }

@@ -74,7 +74,7 @@ class local {
         global $USER;
 
         $failobj = (object) [
-            'feedback' => false
+            'coursegrade' => false
         ];
 
         $config = get_config('theme_snap');
@@ -132,11 +132,12 @@ class local {
             $report = new course_total_grade($USER, $gpr, $course);
             $coursegrade = $report->get_course_total();
             $ignoregrades = [
+                '',
                 '-',
                 '&nbsp;',
                 get_string('error')
             ];
-            if (!in_array($coursegrade, $ignoregrades)) {
+            if (!in_array($coursegrade['value'], $ignoregrades)) {
                 $feedbackobj->coursegrade = $coursegrade;
             }
         }
@@ -515,11 +516,39 @@ class local {
 
             $context = \context_course::instance($courseid);
             $onlyactive = true;
-            $enrolled = count_enrolled_users($context, $capability, null, $onlyactive);
+            $enrolled = self::count_enrolled_users($context, $capability, null, $onlyactive);
             $participantcount[$idx] = $enrolled;
         }
 
         return $participantcount[$idx];
+    }
+
+    /**
+     * Counts list of users enrolled given a context, skipping duplicate ids.
+     * Inspired by count_enrolled_users found in lib/enrollib.php
+     * Core method is counting duplicates because users can be enrolled into a course via different methods, hence,
+     * having multiple registered enrollments.
+     *
+     * @param \context $context
+     * @param string $withcapability
+     * @param int $groupid 0 means ignore groups, any other value limits the result by group id
+     * @param bool $onlyactive consider only active enrolments in enabled plugins and time restrictions
+     * @return int number of enrolled users.
+     */
+    public static function count_enrolled_users(\context $context, $withcapability = '', $groupid = 0, $onlyactive = false) {
+        global $DB;
+
+        $capjoin = get_enrolled_with_capabilities_join(
+            $context, '', $withcapability, $groupid, $onlyactive);
+
+        $sql = "SELECT COUNT(*)
+                  FROM (SELECT DISTINCT u.id
+                          FROM {user} u
+                               $capjoin->joins
+                         WHERE $capjoin->wheres AND u.deleted = 0) as uids
+                ";
+
+        return $DB->count_records_sql($sql, $capjoin->params);
     }
 
     /**
@@ -695,7 +724,7 @@ class local {
         foreach ($events as $event) {
             if (isset($courses[$event->courseid])) {
                 $course = $courses[$event->courseid];
-                $event->coursefullname = $course->fullname;
+                $event->coursefullname = format_string($course->fullname);
             }
         }
         return $events;
@@ -756,7 +785,7 @@ class local {
         $processed = 0;
         $output = array();
         foreach ($events as $event) {
-            if ($event->eventtype === 'course') {
+            if ($event->eventtype === 'course' || $event->eventtype === 'gradingdue') {
                 // Not an activity deadline.
                 continue;
             }
@@ -813,10 +842,17 @@ class local {
 
                 $eventtitle = $event->name .'<small><br>' .$event->coursefullname. '</small>';
 
-                $modimageurl = $output->pix_url('icon', $event->modulename);
+                $modimageurl = $output->image_url('icon', $event->modulename);
                 $modname = get_string('modulename', $event->modulename);
                 $modimage = \html_writer::img($modimageurl, $modname);
                 $deadline = $event->timestart + $event->timeduration;
+                if ($event->modulename === 'collaborate') {
+                    if ($event->timeduration == 0) {
+                        // No deadline for long duration collab rooms.
+                        continue;
+                    }
+                    $deadline = $event->timestart;
+                }
                 if ($event->modulename === 'quiz' || $event->modulename === 'lesson') {
                     $override = \theme_snap\activity::instance_activity_dates($event->courseid, $cm);
                     $deadline = $override->timeclose;
@@ -833,6 +869,9 @@ class local {
                 }
                 $o .= $output->snap_media_object($cm->url, $modimage, $eventtitle, $meta, '');
             }
+        }
+        if (empty($o)) {
+            return '<p>' . get_string('nodeadlines', 'theme_snap') . '</p>';
         }
         return $o;
     }
@@ -876,11 +915,11 @@ class local {
                 $url = $cm->url;
             }
 
-            $modimageurl = $output->pix_url('icon', $cm->modname);
+            $modimageurl = $output->image_url('icon', $cm->modname);
             $modname = get_string('modulename', 'mod_'.$cm->modname);
             $modimage = \html_writer::img($modimageurl, $modname);
 
-            $gradetitle = $cm->name. '<small><br>' .$course->fullname. '</small>';
+            $gradetitle = $cm->name. '<small><br>' .format_string($course->fullname). '</small>';
 
             $releasedon = isset($grade->timemodified) ? $grade->timemodified : $grade->timecreated;
             $meta = get_string('released', 'theme_snap', $output->friendly_datetime($releasedon));
@@ -913,11 +952,11 @@ class local {
             $course = $modinfo->get_course();
             $cm = $modinfo->get_cm($ungraded->coursemoduleid);
 
-            $modimageurl = $output->pix_url('icon', $cm->modname);
+            $modimageurl = $output->image_url('icon', $cm->modname);
             $modname = get_string('modulename', 'mod_'.$cm->modname);
             $modimage = \html_writer::img($modimageurl, $modname);
 
-            $ungradedtitle = $cm->name. '<small><br>' .$course->fullname. '</small>';
+            $ungradedtitle = $cm->name. '<small><br>' .format_string($course->fullname). '</small>';
 
             $xungraded = get_string('xungraded', 'theme_snap', $ungraded->ungraded);
 
@@ -1414,20 +1453,25 @@ class local {
         $formatoptions->noclean = true;
         $formatoptions->context = $context;
 
+        // Process content.
+        $page->content = file_rewrite_pluginfile_urls($page->content,
+            'pluginfile.php', $context->id, 'mod_page', 'content', $page->revision);
+        $page->content = format_text($page->content, $page->contentformat, $formatoptions);
+
         // Make sure we have some summary/extract text for the course page.
         if (!empty($page->intro)) {
             $page->summary = file_rewrite_pluginfile_urls($page->intro,
                 'pluginfile.php', $context->id, 'mod_page', 'intro', null);
             $page->summary = format_text($page->summary, $page->introformat, $formatoptions);
         } else {
-            $preview = strip_tags($page->content);
-            $page->summary = shorten_text($preview, 200);
+            $preview = $page->content;
+            // Prevent img alt tags from being spat out by html_to_text by escaping them.
+            $preview = str_replace('alt=', 'alt&#61;', $preview);
+            $wrapwidth = 0;
+            $listlinks = false;
+            $preview = html_to_text($preview, $wrapwidth, $listlinks);
+            $page->summary = s(shorten_text($preview, 200));
         }
-
-        // Process content.
-        $page->content = file_rewrite_pluginfile_urls($page->content,
-            'pluginfile.php', $context->id, 'mod_page', 'content', $page->revision);
-        $page->content = format_text($page->content, $page->contentformat, $formatoptions);
 
         return ($page);
     }
@@ -1693,7 +1737,7 @@ class local {
                     'cmid' => $post->cmid,
                     'name' => $post->subject,
                     'courseshortname' => $post->courseshortname,
-                    'coursefullname' => $post->coursefullname,
+                    'coursefullname' => format_string($post->coursefullname),
                     'forumname' => $post->forumname,
                     'sectionnum' => null,
                     'timestamp' => $post->modified,
@@ -1739,4 +1783,5 @@ class local {
         global $PAGE;
         return parse_url($PAGE->url->out_as_local_url())['path'];
     }
+
 }

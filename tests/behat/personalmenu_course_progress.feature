@@ -27,8 +27,6 @@ Feature: When the moodle theme is set to Snap, students and teachers can open a 
   Background:
     Given the following config values are set as admin:
       | theme | snap |
-      | enablecompletion   | 1 |
-      | enableavailability | 1 |
     And the following "courses" exist:
       | fullname        | shortname | category | groupmode | visible |
       | Course 1        | C1        | 0        | 1         | 1       |
@@ -54,9 +52,9 @@ Feature: When the moodle theme is set to Snap, students and teachers can open a 
     And I open the personal menu
     Then I should see "Course 1"
     And I should see "Progress: 0 / 1"
-    And I follow "Course 1"
+    And I am on "Course 1" course homepage
     And I go to course section 1
-    And I click on "input[title=\"Mark as complete: Test assignment\"]" "css_element"
+    And I mark the activity "Test assignment" as complete
     And I reload the page
     And I open the personal menu
     Then I should see "Progress: 1 / 1"
