@@ -4,7 +4,7 @@
 
 #page-course-management {
     // View selector.
-    .view-mode-selector{
+    .view-mode-selector {
         float: right;
         font-family: $font-family-system;
         &.action-menu {
@@ -23,7 +23,7 @@
         margin: 0 0.5rem;
     }
     // Two or three cols of data.
-    .grid-col {
+    .category-listing, .course-listing {
         .listing-actions {
             padding: 0.5em 0;
         }
@@ -57,8 +57,8 @@
         }
 
         // Hide move up/down actions on first/last iteams.
-        .listitem:last-child>div .item-actions .action-movedown,
-        .listitem:first-child>div .item-actions .action-moveup {
+        .listitem:last-child > div .item-actions .action-movedown,
+        .listitem:first-child > div .item-actions .action-moveup {
             display: none;
         }
         // Actions for catagory.

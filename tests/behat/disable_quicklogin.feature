@@ -26,20 +26,16 @@ Feature: Disable Snap quick login
   As an Admin
   I need to be able to disable the Snap quick login
 
-  Background:
-    Given the following config values are set as admin:
-      | theme | snap |
-
   @javascript
   Scenario: Snap quick login is disabled
     Given the following config values are set as admin:
       | theme_snap_disablequicklogin | 1 |
     And I am on homepage
     And I wait until the page is ready
-    Then ".btn.btn-default.snap-login-button.js-personal-menu-trigger" "css_element" should not exist
+    Then ".btn.btn-primary.snap-login-button.js-snap-pm-trigger" "css_element" should not exist
 
   @javascript
   Scenario: Snap quick login is not disabled
     Given I am on homepage
     And I wait until the page is ready
-    Then ".btn.btn-default.snap-login-button.js-personal-menu-trigger" "css_element" should exist
+    Then ".btn.btn-primary.snap-login-button.js-snap-pm-trigger" "css_element" should exist

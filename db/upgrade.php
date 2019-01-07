@@ -16,13 +16,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-include_once($CFG->dirroot.'/theme/snap/lib.php');
+require_once($CFG->dirroot.'/theme/snap/lib.php');
 
 /**
  * Theme upgrade
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -91,6 +91,13 @@ function xmldb_theme_snap_upgrade($oldversion) {
             set_config('showcoursegradepersonalmenu', 0, 'theme_snap');
         }
         upgrade_plugin_savepoint(true, 2016121309, 'theme', 'snap');
+    }
+
+    if ($oldversion < 2017122801) {
+        if (!is_null(get_config('theme_snap', 'hidenavblock'))) {
+            unset_config('hidenavblock', 'theme_snap');
+        }
+        upgrade_plugin_savepoint(true, 2017122801, 'theme', 'snap');
     }
 
     return true;

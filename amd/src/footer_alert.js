@@ -15,7 +15,7 @@
  * along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @package   theme_snap
- * @author    Guy Thomas <gthomas@moodlerooms.com>
+ * @author    Guy Thomas <osdev@blackboard.com>
  * @copyright Copyright (c) 2016 Blackboard Inc.
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -65,6 +65,7 @@ define(['jquery', 'core/templates'],
 
             /**
              * Add AJAX loading spinner.
+             * @param {string} str
              */
             this.addAjaxLoading = function(str) {
                 str = !str ? M.util.get_string('loading', 'theme_snap') : str;
@@ -84,10 +85,11 @@ define(['jquery', 'core/templates'],
 
             /**
              * Show footer alert.
+             * @param {function} onCancel
              */
             this.show = function(onCancel) {
                 containerEl.addClass('snap-footer-alert-visible');
-                if (typeof(onCancel) === 'function') {
+                if (typeof (onCancel) === 'function') {
                     $('.snap-footer-alert-cancel').click(onCancel);
                     $('.snap-footer-alert-cancel').addClass('state-visible');
                 } else {

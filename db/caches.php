@@ -18,7 +18,7 @@
  * Cache definition for snap.
  *
  * @package   theme_snap
- * @author    Guy Thomas <gthomas@moodlerooms.com>
+ * @author    Guy Thomas <osdev@blackboard.com>
  * @copyright Copyright (c) 2016 Blackboard Inc.
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -45,5 +45,25 @@ $definitions = array(
         'simplekeys'         => true,
         'simpledata'         => false,
         'staticacceleration' => false
-    ]
+    ],
+    // This is used to cache deadlines per user.
+    'activity_deadlines' => [
+        'mode'               => cache_store::MODE_SESSION,
+        'simplekeys'         => true,
+        'simpledata'         => false,
+        'staticacceleration' => false
+    ],
+    'generalstaticappcache' => [
+        'mode'               => cache_store::MODE_APPLICATION,
+        'simplekeys'         => true,
+        'simpledata'         => false,
+        'staticacceleration' => true
+    ],
+    'profile_based_branding' => [
+        'mode'               => cache_store::MODE_SESSION,
+        'simplekeys'         => true,
+        'simpledata'         => false,
+        'staticacceleration' => false,
+    ],
 );
+

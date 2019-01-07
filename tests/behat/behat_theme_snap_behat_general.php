@@ -16,7 +16,7 @@
 
 /**
  * Overrides for behat navigation.
- * @author    Guy Thomas <gthomas@moodlerooms.com>
+ * @author    Guy Thomas <osdev@blackboard.com>
  * @copyright Copyright (c) 2017 Blackboard Inc.
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -32,7 +32,7 @@ require_once(__DIR__ . '/../../../../lib/tests/behat/behat_general.php');
 /**
  * Overrides to fix intermittent failures.
  *
- * @author    Guy Thomas <gthomas@moodlerooms.com>
+ * @author    Guy Thomas <osdev@blackboard.com>
  * @copyright Copyright (c) 2017 Blackboard Inc.
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -85,9 +85,12 @@ class behat_theme_snap_behat_general extends behat_general {
                     }
                 }
                 if ($args['element']) {
-                    throw new ExpectationException('"' . $args['text'] . '" text was found in the "' . $args['element'] . '" element but was not visible', $context->getSession());
+                    $msg = '"' . $args['text'] . '" text was found in the "' . $args['element'];
+                    $msg .= '" element but was not visible';
+                    throw new ExpectationException($msg, $context->getSession());
                 } else {
-                    throw new ExpectationException('"' . $args['text'] . '" text was found but was not visible', $context->getSession());
+                    $msg = '"' . $args['text'] . '" text was found but was not visible';
+                    throw new ExpectationException($msg, $context->getSession());
                 }
             },
             $args,
@@ -173,7 +176,7 @@ class behat_theme_snap_behat_general extends behat_general {
 
     public function assert_page_not_contains_text($text) {
         $nodes = $this->get_nodes_containing_text($text);
-        if (empty($nodes)) {
+        if (empty($nodes) || $this->recheck_for_nodes_not_containing_text(10, $text)) {
             // No nodes found so no text found!
             return;
         }
@@ -214,7 +217,8 @@ class behat_theme_snap_behat_general extends behat_general {
             sleep(2);
             $nodes = $this->get_nodes_containing_text($text, $container);
             if (empty($nodes)) {
-                throw new ExpectationException('"' . $text . '" text was not found in the "' . $element . '" element', $this->getSession());
+                $msg = '"' . $text . '" text was not found in the "' . $element . '" element';
+                throw new ExpectationException($msg, $this->getSession());
             }
         }
 
@@ -236,7 +240,8 @@ class behat_theme_snap_behat_general extends behat_general {
             sleep(2);
             $nodes = $this->get_nodes_containing_text($text, $container);
             if (empty($nodes)) {
-                throw new ExpectationException('"' . $text . '" text was not found in the "' . $element . '" element', $this->getSession());
+                $msg = '"' . $text . '" text was not found in the "' . $element . '" element';
+                throw new ExpectationException($msg, $this->getSession());
             }
             $this->check_text_visible_in_nodes($nodes, $text, $element);
         }
@@ -247,7 +252,7 @@ class behat_theme_snap_behat_general extends behat_general {
         // Getting the container where the text should be found.
         $container = $this->get_selected_node($selectortype, $element);
         $nodes = $this->get_nodes_containing_text($text, $container);
-        if (empty($nodes)) {
+        if (empty($nodes) || $this->recheck_for_nodes_not_containing_text(10, $text, $container)) {
             // No nodes found so no text found!
             return;
         }
@@ -273,6 +278,21 @@ class behat_theme_snap_behat_general extends behat_general {
                 return;
             }
             $this->check_text_not_visible_in_nodes($nodes, $text, $element, $selectortype);
+        }
+    }
+
+    public function recheck_for_nodes_not_containing_text($times, $text, $container = false) {
+        $this->wait_for_pending_js();
+        sleep(2);
+        $nodes = $this->get_nodes_containing_text($text, $container);
+        if (!empty($nodes)) {
+            if ($times > 0) {
+                return $this->recheck_for_nodes_not_containing_text($times - 1, $text, $container);
+            } else {
+                return false;
+            }
+        } else {
+            return true;
         }
     }
 }

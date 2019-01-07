@@ -24,6 +24,7 @@ use core\event\course_module_deleted;
 use core\event\course_module_completion_updated;
 use core\event\user_deleted;
 use core\event\user_graded;
+use core\event\base;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -33,7 +34,7 @@ defined('MOODLE_INTERNAL') || die();
  * This class contains all the event handlers used by Snap.
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -124,6 +125,26 @@ class event_handlers {
     public static function course_module_completion_updated(course_module_completion_updated $event) {
         // Force an update for the specific course and user effected by this completion event.
         local::course_user_completion_cachestamp($event->courseid, $event->relateduserid, true);
+    }
+
+    /**
+     * Record calendar change for affected course.
+     * @param base $event
+     */
+    public static function calendar_change(base $event) {
+        local::add_calendar_change_stamp($event->courseid);
+    }
+
+    /**
+     * The user update event.
+     *
+     * Removes cache value for this user Profile based branding CSS class.
+     *
+     * @param \user_updated $event
+     */
+    public static function user_updated($event) {
+        $cache = \cache::make('theme_snap', 'profile_based_branding');
+        $cache->delete('pbb_class');
     }
 
 }

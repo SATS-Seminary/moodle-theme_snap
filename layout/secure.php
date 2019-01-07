@@ -20,7 +20,7 @@
  * way.
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
@@ -44,7 +44,7 @@ echo $OUTPUT->doctype() ?>
     </div>
 
     <div id="moodle-navbar">
-        <div class="nav-link  pull-xs-right">
+        <div class="nav-link float-md-right">
             <?php echo $OUTPUT->login_info(false) ?>
         </div>
     </div>

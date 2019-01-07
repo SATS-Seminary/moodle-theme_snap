@@ -17,7 +17,7 @@
 /**
  * Course card renderable
  * @author    gthomas2
- * @copyright Copyright (c) 2016 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2016 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -106,12 +106,27 @@ class course_card implements \renderable {
     /**
      * @var bool
      */
+    public $archived = false;
+
+    /**
+     * @var bool
+     */
     public $published = true;
 
     /**
      * @var string
      */
     public $toggletitle = '';
+
+    /**
+     * @var int
+     */
+    public $category = null;
+
+    /**
+     * @var string
+     */
+    public $feedbackurl;
 
     /**
      * @param int $courseid
@@ -130,7 +145,9 @@ class course_card implements \renderable {
     private function apply_properties() {
         global $DB;
         $this->course = $DB->get_record('course', ['id' => $this->courseid]);
+        $this->category = $this->course->category;
         $this->url = new \moodle_url('/course/view.php', ['id' => $this->course->id]) . '';
+        $this->feedbackurl = new \moodle_url('/grade/report/user/index.php', ['id' => $this->course->id]) . '';
         $this->shortname = $this->course->shortname;
         $this->fullname = format_string($this->course->fullname);
         $this->published = (bool)$this->course->visible;
@@ -148,14 +165,13 @@ class course_card implements \renderable {
         static $count = 0;
         $count++;
         $bgcolor = local::get_course_color($this->courseid);
-        $this->imagecss = "background-color: #$bgcolor;";
-        // Only immediately load images for the first 15 cards.
+        $this->imagecss = "background-image: $bgcolor;";
+        // Only immediately load images for the first 12 cards.
         $bgimage = local::course_card_image_url($this->courseid);
         $isajax = defined('AJAX_SCRIPT') && AJAX_SCRIPT;
-
         if (!empty($bgimage)) {
-            if (!$isajax && $count <= 15) {
-                $this->imagecss .= "background-image: url($bgimage);";
+            if (!$isajax && $count <= 12) {
+                $this->imagecss = "background-image: url($bgimage);";
             } else {
                 $this->lazyloadimageurl = $bgimage->out();
             }

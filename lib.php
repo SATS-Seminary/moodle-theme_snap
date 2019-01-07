@@ -18,10 +18,11 @@
  * Standard library functions for snap theme.
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die();
 
 /**
  * Process site cover image.
@@ -45,6 +46,8 @@ function theme_snap_process_site_coverimage() {
  */
 function theme_snap_process_css($css, theme_config $theme) {
 
+    $css = theme_snap_set_category_colors($css, $theme);
+
     // Set the background image for the logo.
     $logo = $theme->setting_file_url('logo', 'logo');
     $css = theme_snap_set_logo($css, $logo);
@@ -57,6 +60,68 @@ function theme_snap_process_css($css, theme_config $theme) {
     }
     $css = theme_snap_set_customcss($css, $customcss);
 
+    return $css;
+}
+
+/**
+ * Adds the custom category colors to the CSS.
+ *
+ * @param string $css The CSS.
+ * @return string The updated CSS
+ */
+function theme_snap_set_category_colors($css, $theme) {
+    global $DB;
+
+    $tag = '/**setting:categorycolors**/';
+    $replacement = '';
+
+    // Get category colors from database.
+    $categorycolors = array();
+    $dbcategorycolors = get_config("theme_snap", "category_color");
+    if (!empty($dbcategorycolors) && $dbcategorycolors != '0') {
+        $categorycolors = json_decode($dbcategorycolors, true);
+    }
+
+    if (!empty($categorycolors)) {
+        $colors = $categorycolors;
+
+        list($insql, $inparams) = $DB->get_in_or_equal(array_keys($colors));
+        $categories = $DB->get_records_select(
+            'course_categories',
+            'id ' . $insql,
+            $inparams,
+            // Ordered by path ascending so that the colors of child categories overrides,
+            // parent categories by coming later in the CSS output.
+            'path ASC'
+        );
+
+        $themedirectory = realpath(core_component::get_component_directory('theme_snap'));
+        $brandscss = file_get_contents($themedirectory . '/scss/_brandcolor.scss');
+        foreach ($categories as $category) {
+            $compiler = new core_scss();
+            // Rewrite wrapper class with current category id.
+            $categoryselector = '.category-' . $category->id . ' {';
+            $scss = str_replace('.theme-snap {', $categoryselector, $brandscss);
+            $compiler->append_raw_scss($scss);
+            $compiler->add_variables([
+                'brand-primary' => $colors[$category->id],
+                'nav-color' => $colors[$category->id],
+                'nav-button-color' => $colors[$category->id],
+                'nav-login-bg' => $colors[$category->id],
+                'nav-login-color' => '#FFFFFF'
+            ]);
+
+            try {
+                $compiled = $compiler->to_css();
+            } catch (\Leafo\ScssPhp\Exception $e) {
+                $compiled = '';
+                debugging('Error while compiling SCSS: ' . $e->getMessage(), DEBUG_DEVELOPER);
+            }
+            $replacement = $replacement . $compiled;
+        }
+    }
+
+    $css = str_replace($tag, $replacement, $css);
     return $css;
 }
 
@@ -142,10 +207,24 @@ function theme_snap_send_file($context, $filearea, $args, $forcedownload, $optio
  */
 function theme_snap_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options = array()) {
 
-    if ($context->contextlevel == CONTEXT_SYSTEM && in_array($filearea, ['logo', 'favicon', 'fs_one_image', 'fs_two_image', 'fs_three_image', 'slide_one_image', 'slide_two_image', 'slide_three_image'])) {
+    $coverimagecontexts = [CONTEXT_SYSTEM, CONTEXT_COURSE, CONTEXT_COURSECAT];
+
+    // System level file areas.
+    $sysfileareas = [
+        'logo',
+        'favicon',
+        'fs_one_image',
+        'fs_two_image',
+        'fs_three_image',
+        'slide_one_image',
+        'slide_two_image',
+        'slide_three_image'
+    ];
+
+    if ($context->contextlevel == CONTEXT_SYSTEM && in_array($filearea, $sysfileareas)) {
         $theme = theme_config::load('snap');
         return $theme->setting_file_serve($filearea, $args, $forcedownload, $options);
-    } else if (($context->contextlevel == CONTEXT_SYSTEM || $context->contextlevel == CONTEXT_COURSE)
+    } else if (in_array($context->contextlevel, $coverimagecontexts)
         && $filearea == 'coverimage' || $filearea == 'coursecard') {
         theme_snap_send_file($context, $filearea, $args, $forcedownload, $options);
     } else {
@@ -236,6 +315,20 @@ function theme_snap_get_pre_scss($theme) {
     }
     $fallbackserif = 'Georgia,"Times New Roman", Times, serif';
     $settings['font-family-serif'] = $userfontserif . $fallbackserif;
+
+    if (!empty($theme->settings->customisenavbar)) {
+        $settings['nav-bg'] = !empty($theme->settings->navbarbg) ? $theme->settings->navbarbg : '#ffffff';
+        $settings['nav-color'] = !empty($theme->settings->navbarlink) ? $theme->settings->navbarlink : $settings['brand-primary'];
+    }
+    if (!empty($theme->settings->customisenavbutton)) {
+        $settings['nav-button-bg'] = !empty($theme->settings->navbarbuttoncolor) ? $theme->settings->navbarbuttoncolor : "#ffffff";
+
+        if (!empty($theme->settings->navbarbuttonlink)) {
+            $settings['nav-button-color'] = $theme->settings->navbarbuttonlink;
+        } else {
+            $settings['nav-button-color'] = $settings['brand-primary'];
+        }
+    }
 
     foreach ($settings as $key => $value) {
         $scss .= '$' . $key . ': ' . $value . ";\n";

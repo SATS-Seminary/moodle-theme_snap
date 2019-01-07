@@ -17,7 +17,7 @@
 /**
  * Coures toc renderable
  * @author    gthomas2
- * @copyright Copyright (c) 2016 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2016 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -84,8 +84,9 @@ class course_toc implements \renderable, \templatable{
     /**
      * course_toc constructor.
      * @param null $course
+     * @params null $format
      */
-    function __construct($course = null) {
+    public function __construct($course = null, $format = null) {
         global $COURSE;
         if (empty($course)) {
             $course = $COURSE;
@@ -98,8 +99,17 @@ class course_toc implements \renderable, \templatable{
             $this->formatsupportstoc = true;
         }
 
-        $this->format  = course_get_format($course);
-        $this->course  = $this->format->get_course(); // Has additional fields.
+        if ($format) {
+            $this->format  = $format;
+        } else {
+            $this->format  = course_get_format($course);
+            $additionaloptions = $this->format->get_format_options(); // Has additional fields.
+            foreach ($additionaloptions as $additionaloption => $value) {
+                $course->$additionaloption = $value;
+            }
+        }
+
+        $this->course = $course;
         $this->numsections = $this->format->get_last_section_number();
 
         $this->set_modules();
@@ -114,14 +124,15 @@ class course_toc implements \renderable, \templatable{
     protected function set_modules() {
         global $CFG, $PAGE;
 
+        // Set context first so $OUTPUT does not break later.
+        if (!isset($PAGE->context) && AJAX_SCRIPT) {
+            $PAGE->set_context(context_course::instance($this->course->id));
+        }
+
         // If course does not have any sections then exit - note, module search is not supported in course formats
         // that don't have sections.
         if (empty($this->numsections)) {
             return;
-        }
-
-        if (!isset($PAGE->context) && AJAX_SCRIPT) {
-            $PAGE->set_context(context_course::instance($this->course->id));
         }
 
         $modinfo = get_fast_modinfo($this->course);
@@ -147,11 +158,6 @@ class course_toc implements \renderable, \templatable{
             }
             $module->url = '#section-'.$cm->sectionnum.'&module-'.$cm->id;
 
-            if ($this->course->format == 'folderview') {
-                // For folder view we will need to add a regular link causing the page to reload.
-                $module->url = $CFG->wwwroot.'/course/view.php?id='.
-                        $this->course->id.'&section='.$cm->sectionnum.'#module-'.$cm->id;
-            }
             $module->formattedname = $cm->get_formatted_name();
             $this->modules[] = $module;
         }
@@ -163,7 +169,7 @@ class course_toc implements \renderable, \templatable{
 
         $this->chapters->listlarge = $this->numsections > 9 ? 'list-large' : '';
 
-        $this->chapters->chapters= [];
+        $this->chapters->chapters = [];
 
         $canviewhidden = has_capability('moodle/course:viewhiddensections', context_course::instance($this->course->id));
 
@@ -213,7 +219,7 @@ class course_toc implements \renderable, \templatable{
                 }
             }
 
-            $chapter->title = get_section_name($this->course, $section);
+            $chapter->title = $this->format->get_section_name($section);
             if ($chapter->title == get_string('general')) {
                 $chapter->title = get_string('introduction', 'theme_snap');
             }
@@ -224,20 +230,11 @@ class course_toc implements \renderable, \templatable{
             }
 
             if ($chapter->outputlink) {
-                $singlepage = $this->course->format !== 'folderview';
-                if ($singlepage) {
-                    $chapter->url = '#section-'.$section;
-                } else
-                    if ($section > 0) {
-                        $chapter->url = course_get_url($this->course, $section, ['navigation' => true, 'sr' => $section]);
-                    } else {
-                        // We need to create the url for section 0, or a hash will get returned.
-                        $chapter->url = new moodle_url('/course/view.php', ['id' => $this->course->id, 'section' => $section]);
-                    }
+                $chapter->url = '#section-'.$section;
             }
 
             $chapter->progress = new course_toc_progress($this->course, $thissection);
-            $this->chapters->chapters[]=$chapter;
+            $this->chapters->chapters[] = $chapter;
         }
     }
 

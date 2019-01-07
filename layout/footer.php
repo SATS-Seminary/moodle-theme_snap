@@ -20,7 +20,7 @@
  * way.
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
@@ -31,16 +31,17 @@ defined('MOODLE_INTERNAL') || die();
 /* Snap custom footer.*/
 /* Custom footer edit buttons. */
 $footnote = empty($PAGE->theme->settings->footnote) ? '' : $PAGE->theme->settings->footnote;
+$footnote = format_text($footnote, FORMAT_HTML, ['noclean' => true]);
 if ($this->page->user_is_editing() && $PAGE->pagetype == 'site-index') {
     $url = new moodle_url('/admin/settings.php', ['section' => 'themesettingsnap'], 'admin-footnote');
-    $link = html_writer::link($url, get_string('editcustomfooter', 'theme_snap'), ['class' => 'btn btn-inverse btn-sm']);
+    $link = html_writer::link($url, get_string('editcustomfooter', 'theme_snap'), ['class' => 'btn btn-primary btn-sm']);
     $footnote .= '<p class="text-right">'.$link.'</p>';
 }
 
 $custommenu = $OUTPUT->custom_menu();
 if (!empty($custommenu) && $this->page->user_is_editing() && $PAGE->pagetype == 'site-index') {
     $url = new moodle_url('/admin/settings.php', ['section' => 'themesettings'], 'id_s__custommenuitems');
-    $link = html_writer::link($url, get_string('editcustommenu', 'theme_snap'), ['class' => 'btn btn-inverse btn-sm']);
+    $link = html_writer::link($url, get_string('editcustommenu', 'theme_snap'), ['class' => 'btn btn-primary btn-sm']);
     $custommenu .= '<p class="text-right">'.$link.'</p>';
 }
 
@@ -69,7 +70,7 @@ if (!empty($PAGE->theme->settings->youtube)) {
 if (!empty($PAGE->theme->settings->instagram)) {
     $socialmedialinks .= $this->social_menu_link('instagram', $PAGE->theme->settings->instagram);
 }
-if(!empty($socialmedialinks)) {
+if (!empty($socialmedialinks)) {
     echo '<div id="snap-socialmedia-links">' .$socialmedialinks. '</div>';
 }
 echo '</div>';
@@ -93,14 +94,7 @@ if (!empty($custommenu)) {
                 echo $OUTPUT->page_doc_link();
                 echo "<br>";
             }
-            if (core_component::get_component_directory('local_mrooms') !== null) {
-                $langkey   = \local_mrooms\kb_link::resolve_language_key();
-                $builtwith = html_writer::link("https://$langkey.help.blackboard.com/Moodlerooms", get_string('pluginname', 'theme_snap'),
-                ['target' => '_blank', 'title' => get_string('help', 'theme_snap')]);
-            } else {
-                $builtwith = get_string('pluginname', 'theme_snap');
-            }
-            echo get_string('poweredbyrunby', 'theme_snap', $builtwith);
+            echo get_string('poweredbyrunby', 'theme_snap', date('Y', time()));
             ?>
         </small>
     </div>

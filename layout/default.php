@@ -18,7 +18,7 @@
  * Layout - default.
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
@@ -26,6 +26,9 @@ defined('MOODLE_INTERNAL') || die();
 require(__DIR__.'/header.php');
 
 use theme_snap\local;
+
+// @codingStandardsIgnoreStart
+// Note, coding standards ignore is required so that we can have more readable indentation under php tags.
 
 $mastimage = '';
 // Check we are in a course (not the site level course), and the course is using a cover image.
@@ -44,7 +47,7 @@ if ($COURSE->id != SITEID && !empty($coverimagecss)) {
 <main id="moodle-page" class="clearfix">
 <div id="page-header" class="clearfix <?php echo $mastimage; ?>">
     <?php if ($PAGE->pagetype !== 'site-index') { ?>
-        <div class="breadcrumb-nav" aria-label="breadcrumb"><?php echo $OUTPUT->navbar(); ?></div>
+        <div class="breadcrumb-nav" aria-label="breadcrumb"><?php echo $OUTPUT->navbar($mastimage); ?></div>
     <?php }
         if ($carousel) {
             // Front page carousel.
@@ -63,7 +66,6 @@ if ($COURSE->id != SITEID && !empty($coverimagecss)) {
         </div>
         <?php
             if ($this->page->user_is_editing() && $PAGE->pagetype == 'site-index') {
-                $url = new moodle_url('/admin/settings.php', ['section' => 'themesettingsnap'], 'admin-poster');
                 echo $OUTPUT->cover_image_selector();
             }
         } // End else.
@@ -122,6 +124,7 @@ if ($PAGE->pagelayout === 'frontpage' && $PAGE->pagetype === 'site-index') {
     echo $OUTPUT->main_content();
 }
 
+echo $OUTPUT->activity_navigation();
 echo $OUTPUT->course_content_footer();
 
 if (stripos($PAGE->bodyclasses, 'format-singleactivity') !== false ) {
@@ -142,5 +145,5 @@ if (stripos($PAGE->bodyclasses, 'format-singleactivity') !== false ) {
 </div>
 </div>
 <!-- close moodle js hooks -->
-
-<?php require(__DIR__.'/footer.php');
+<?php // @codingStandardsIgnoreEnd
+require(__DIR__.'/footer.php');

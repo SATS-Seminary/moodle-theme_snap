@@ -8,7 +8,7 @@
 @import "coursefooter";
 @import "courselistings";
 @import "toc";
-@import "fixy";
+@import "personalmenu";
 @import "forms";
 @import "filemanager";
 @import "plugins";
@@ -16,7 +16,10 @@
 @import "message";
 @import "coursemanagement";
 @import "themesettings";
-@import "brand";
+@import "brandcolor";
+@import "typefaces";
 @import "behat";
 @import "custom";
 @import "print";
+// Import FontAwesome.
+@import "../../boost/scss/fontawesome";

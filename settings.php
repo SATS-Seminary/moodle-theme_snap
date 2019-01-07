@@ -18,16 +18,15 @@
  * Snap settings.
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2017 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2017 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;
 
-$settings = null; // Unsets the default $settings object initialised by Moodle.
-$settings = new theme_boost_admin_settingspage_tabs('themesettingsnap', 'Snap');
-
 if ($ADMIN->fulltree) {
+    $settings = new theme_boost_admin_settingspage_tabs('themesettingsnap', 'Snap');
+
     $checked = '1';
     $unchecked = '0';
     require('settings/snap_basics.php');
@@ -37,4 +36,7 @@ if ($ADMIN->fulltree) {
     require('settings/featured_courses_settings.php');
     require('settings/course_settings.php');
     require('settings/social_media_settings.php');
+    require('settings/navigation_bar_settings.php');
+    require('settings/categories_color_settings.php');
+    require('settings/profile_based_branding.php');
 }

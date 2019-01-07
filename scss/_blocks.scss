@@ -16,9 +16,12 @@
  * Moodle blocks.
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+/* stylelint-disable declaration-no-important*/
+
 @include media-breakpoint-up(md) {
     #moodle-blocks > aside {
         column-count: 2;
@@ -35,11 +38,11 @@
 }
 
 .block .header .title h2 {
-    font-size: $font-size-h5;
+    font-size: $h5-font-size;
 }
 
 .block h3 {
-    font-size: $font-size-h6;
+    font-size: $h6-font-size;
 }
 
 /* remove block actions, always display blocks when displayed */
@@ -71,7 +74,6 @@
 #page-my-index #moodle-blocks,
 #page-calendar-view #moodle-blocks,
 #moodle-blocks.state-visible,
-.format-folderview.path-course-view:not(.folderview-single-section) #moodle-blocks,
 .format-weeks.path-course-view.editing #moodle-blocks,
 .format-topics.path-course-view.editing #moodle-blocks {
     visibility: visible;
@@ -112,7 +114,6 @@
     padding: 0 2%;
     border: 0;
     box-shadow: none;
-    border: 0;
     background-color: transparent;
     max-width: 50.5em;
 }
@@ -128,9 +129,41 @@ body.path-site .block.block_settings {
 }
 
 /* Reset margin on setting block. */
-.block_settings .block_tree ul {
-    margin-left: 0;
-    padding-left: 20px;
+.block_settings {
+    > .card-body {
+        padding-left: 0;
+        padding-right: 0;
+        @media (max-width: 996px) {
+            padding-top: 3rem;
+        }
+        @media (max-width: 762px) {
+            padding-top: 3.5rem;
+        }
+        @media (max-width: 560px) {
+            padding-top: 6.3rem;
+        }
+
+
+        // This is inside card-body for specificity resasons.
+        .block_tree [aria-expanded="false"].loading {
+            background: none;
+
+            :after {
+                content: '';
+                margin-left: 0.5em;
+                @include ajaxing(inline-block, relative, 16px, 4px);
+            }
+        }
+    }
+    .footer {
+        padding: 0 1em;
+    }
+    .block_tree {
+        ul {
+            margin-left: 0;
+            padding-left: 20px;
+        }
+    }
 }
 
 /* icons in blocks */
@@ -188,6 +221,7 @@ body.path-site .block.block_settings {
     background-color: #fff !important;
     top: 0;
     right: -100%;
+    padding: 0;
 
     .moodle-core-dragdrop-draghandle {
         display: none;

@@ -52,12 +52,13 @@ class behat_theme_snap_behat_permissions extends behat_permissions {
         foreach ($table->getRows() as $key => $row) {
 
             if (count($row) !== 2) {
-                throw new ExpectationException('You should specify a table with capability/permission columns', $this->getSession());
+                $msg = 'You should specify a table with capability/permission columns';
+                throw new ExpectationException($msg, $this->getSession());
             }
 
             list($capability, $permission) = $row;
 
-            // Skip the headers row if it was provided
+            // Skip the headers row if it was provided.
             if (strtolower($capability) == 'capability' || strtolower($capability) == 'capabilities') {
                 continue;
             }
@@ -79,5 +80,22 @@ class behat_theme_snap_behat_permissions extends behat_permissions {
 
         }
         $systemcontext->mark_dirty();
+    }
+
+    /**
+     * @Given /^I set capability "(?P<capability_string>(?:[^"]|\\")*)" for students in the course$/
+     * Sets a specific capability for a student inside a course.
+     * @param string $capability
+     */
+    public function i_set_activityvisibility_capability_to_student ($capability) {
+        global $DB;
+
+        $DB->insert_record('role_capabilities', array(
+            'contextid' => 1,
+            'roleid' => 5,
+            'capability' => $capability,
+            'permission' => 1,
+            'timemodified' => time(),
+            'modifierid' => 0));
     }
 }

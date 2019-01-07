@@ -3,7 +3,7 @@
 // -------------------------
 
 // Reset core styles.
-.course_category_tree .category>.info,
+.course_category_tree .category > .info,
 .coursebox .info,
 .coursebox {
     background-color: transparent;
@@ -19,10 +19,10 @@
     border-bottom: 1px solid $gray-lighter;
 
     .coursename {
-        display : inline;
+        display: inline;
     }
     .info .coursename {
-        font-size: $font-size-h6;
+        font-size: $h6-font-size;
     }
     .info {
         padding: 0;
@@ -64,7 +64,7 @@
             vertical-align: top;
 
             .coursename {
-                font-size: $font-size-h4;
+                font-size: $h4-font-size;
             }
         }
     }
@@ -94,6 +94,16 @@
 #page-course-index {
     #region-main {
         max-width: 100%;
+        .row {
+            display: block;
+        }
+    }
+    // Catagory descriptions.
+    .snap-category-description {
+        max-width: 43.5em;
+        padding: 2%;
+        background-color: white;
+        font-family: $font-family-serif;
     }
     // Layout for search, select cat and expand/collapse.
     #switchcategory select {
@@ -103,9 +113,16 @@
     .course_category_tree {
         clear: both;
     }
-    .course_category_tree {
-        padding: 1rem 0;
+    @media (max-width: 575px) {
+        #region-main .row .col-sm-8.text-right {
+            text-align: center !important;
+            padding-top: 1em;
+        }
+        .course_category_tree {
+            padding: 1.25rem;
+        }
     }
+
 }
 
 // Catagory expand/collapse & associated icons.

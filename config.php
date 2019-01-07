@@ -18,7 +18,7 @@
  * Theme config
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 defined('MOODLE_INTERNAL') || die();
@@ -74,13 +74,6 @@ $THEME->editor_sheets = array('editor');
 $THEME->rendererfactory = 'theme_overridden_renderer_factory';
 
 $THEME->layouts = array(
-    'format_flexpage' => array(
-        'file' => 'flexpage.php',
-        'regions' => array('side-top', 'side-pre', 'main', 'side-main-box', 'side-post'),
-        'defaultregion' => 'main',
-        'options' => array('langmenu' => true),
-    ),
-
     // Most backwards compatible layout without the blocks - this is the layout used by default.
     'base' => array(
         'file' => 'default.php',
@@ -216,3 +209,11 @@ if ($themeissnap && $notajaxscript) {
     }
 
 }
+
+$runningbehattest = defined('BEHAT_SITE_RUNNING') && BEHAT_SITE_RUNNING;
+$requiredblocks = array('settings');
+if ($runningbehattest) {
+    array_push($requiredblocks, 'navigation');
+}
+
+$THEME->requiredblocks = $requiredblocks;

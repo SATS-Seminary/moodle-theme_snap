@@ -18,7 +18,7 @@
  * Snap AJAX handler
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -57,6 +57,7 @@ if (!in_array($action, $nologinactions)) {
     }
 }
 
+// @codingStandardsIgnoreLine
 /** @var $PAGE moodle_page */
 $PAGE->set_context($context);
 if ($course !== null) {

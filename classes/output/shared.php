@@ -18,7 +18,7 @@
  * Renderer functions shared between multiple renderers.
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -143,7 +143,7 @@ class shared extends \renderer_base {
         $json = json_encode($handler->get_js_data());
         $script = <<<EOF
             <script>
-                var theme_snap_course_file_handlers = $json;
+                var themeSnapCourseFileHandlers = $json;
             </script>
 EOF;
 
@@ -277,7 +277,7 @@ EOF;
      * @return void
      */
     public static function page_requires_js() {
-        global $CFG, $PAGE, $COURSE, $USER;
+        global $CFG, $PAGE, $COURSE, $USER, $OUTPUT;
 
         $PAGE->requires->jquery();
         $PAGE->requires->js_amd_inline("require(['theme_boost/loader']);");
@@ -301,7 +301,8 @@ EOF;
             'movefailed',
             'movingdropsectionhelp',
             'movingstartedhelp',
-            'notpublished'
+            'notpublished',
+            'visibility'
         ), 'theme_snap');
 
         $PAGE->requires->strings_for_js([
@@ -310,6 +311,11 @@ EOF;
             'error',
             'unknownerror',
             'closebuttontitle',
+            'modhide',
+            'modshow',
+            'hiddenoncoursepage',
+            'showoncoursepage',
+            'switchrolereturn'
         ], 'moodle');
 
         $PAGE->requires->strings_for_js([
@@ -333,7 +339,7 @@ EOF;
             $completioninfo = new \completion_info($COURSE);
             if ($completioninfo->is_enabled()) {
                 $modinfo = get_fast_modinfo($COURSE);
-                $sections= $modinfo->get_section_info_all();
+                $sections = $modinfo->get_section_info_all();
                 foreach ($sections as $number => $section) {
                     $ci = new \core_availability\info_section($section);
                     $information = '';
@@ -357,18 +363,23 @@ EOF;
             'id' => $COURSE->id,
             'shortname' => $COURSE->shortname,
             'contextid' => $PAGE->context->id,
+            'categoryid' => !empty($PAGE->category->id) ? $PAGE->category->id : false,
             'ajaxurl' => '/course/rest.php',
             'unavailablesections' => $unavailablesections,
             'unavailablemods' => $unavailablemods,
             'enablecompletion' => isloggedin() && $COURSE->enablecompletion
         ];
 
+        $mprocs = get_message_processors(true);
         $forcepwdchange = (bool) get_user_preferences('auth_forcepasswordchange', false);
-        $conversationbadgecountenabled = isloggedin() && !isset($mprocs['badge']) && $PAGE->theme->settings->messagestoggle == 1;
+        $conversationbadgecountenabled = isloggedin() && isset($mprocs['badge']) && $PAGE->theme->settings->messagestoggle == 1;
         $userid = $USER->id;
-        $sitepolicyacceptreqd = isloggedin() && $CFG->sitepolicy && empty($USER->policyagreed) && !is_siteadmin();
+        $manager = new \core_privacy\local\sitepolicy\manager();
+        $policyurlexist = $manager->is_defined();
+        $sitepolicyacceptreqd = isloggedin() && $policyurlexist && empty($USER->policyagreed) && !is_siteadmin();
+        $inalternativerole = $OUTPUT->in_alternative_role();
         $initvars = [$coursevars, $pagehascoursecontent, get_max_upload_file_size($CFG->maxbytes), $forcepwdchange,
-                     $conversationbadgecountenabled, $userid, $sitepolicyacceptreqd];
+                     $conversationbadgecountenabled, $userid, $sitepolicyacceptreqd, $inalternativerole];
         $PAGE->requires->js_call_amd('theme_snap/snap', 'snapInit', $initvars);
 
         // Does the page have editable course content?
@@ -385,38 +396,6 @@ EOF;
                 $USER->editing = $originaleditstate;
             }
         }
-    }
-
-    /**
-     * Render a warning where flexpage is the course format for the front page.
-     *
-     * @author: Guy Thomas
-     * @date: 2014-07-17
-     * @param bool $adminsonly
-     * @return string
-     */
-    public static function flexpage_frontpage_warning($adminsonly = false) {
-        global $OUTPUT;
-
-        if ($adminsonly) {
-            if (!is_siteadmin()) {
-                // Only for admin users.
-                return '';
-            }
-        }
-
-        // Check to see if the front page course has a format of flexpage.
-        $fpage = get_site();
-        if ($fpage->format != 'flexpage') {
-            // Front page format is not flexpage.
-            return '';
-        }
-
-        $url = new moodle_url('/admin/settings.php', ['section' => 'frontpagesettings']);
-
-        // Output warning.
-        return ($OUTPUT->notification(get_string('warnsiteformatflexpage',
-                'theme_snap', $url->out())));
     }
 
     /**
@@ -488,7 +467,7 @@ EOF;
      * @return string
      */
     public static function appendices() {
-        global $CFG, $COURSE, $PAGE, $OUTPUT;
+        global $CFG, $COURSE, $PAGE, $OUTPUT, $DB;
 
         $links = array();
         $localplugins = core_component::get_plugin_list('local');
@@ -540,22 +519,11 @@ EOF;
             );
         }
 
-        // Norton grader if installed.
         $iconurl = $OUTPUT->image_url('joule_grader', 'theme');
         $gradebookicon = '<img src="'.$iconurl.'" class="svg-icon" alt="" role="presentation">';
-        if (array_key_exists('nortongrader', $localplugins)) {
-            if (has_capability('local/nortongrader:grade', $coursecontext)
-                || has_capability('local/nortongrader:view', $coursecontext)
-            ) {
-                $links[] = array(
-                    'link' => $CFG->wwwroot.'/local/nortongrader/view.php?courseid='.$COURSE->id,
-                    'title' => $gradebookicon.get_string('pluginname', 'local_nortongrader'),
-                );
-            }
-        }
 
         // Joule grader if installed.
-        if (array_key_exists('joulegrader', $localplugins) && !array_key_exists('nortongrader', $localplugins)) {
+        if (array_key_exists('joulegrader', $localplugins)) {
             if (has_capability('local/joulegrader:grade', $coursecontext)
                 || has_capability('local/joulegrader:view', $coursecontext)
             ) {
@@ -578,23 +546,24 @@ EOF;
         }
 
         // Participants.
-        if (has_capability('moodle/course:viewparticipants', $coursecontext)) {
+        if (course_can_view_participants($coursecontext)) {
+
             // Get count of course users.
-            $usercount = count_enrolled_users(context_course::instance($COURSE->id), '', 0, true);
+            $usercount = \theme_snap\local::count_enrolled_users($coursecontext, '', 0, true);
 
             // Build icon.
             $participanticons = '';
-            if(!empty($usercount)) {
+            if (!empty($usercount)) {
                 // Get subset of users for icon.
-                $usersubset = get_enrolled_users(context_course::instance($COURSE->id), '', 0, 'u.*', 'picture desc, lastaccess desc', 0, 4, true);
+                $usersubset = get_enrolled_users($coursecontext,
+                        '', 0, 'u.*', 'picture desc, lastaccess desc', 0, 4, true);
                 foreach ($usersubset as $user) {
                     $userpicture = new \user_picture($user);
                     $userpicture->link = false;
                     $userpicture->size = 100;
                     $participanticons .= $OUTPUT->render($userpicture);
                 }
-            }
-            else {
+            } else {
                 // Default icon when 0 participants.
                 $iconurl = $OUTPUT->image_url('u/f1');
                 $participanticons = '<img src="'.$iconurl.'" alt="" role="presentation">';
@@ -622,7 +591,7 @@ EOF;
         }
 
         // Personalised Learning Designer.
-        if (array_key_exists('pld', $localplugins) && has_capability('moodle/course:update', $coursecontext)) {
+        if (array_key_exists('pld', $localplugins) && has_capability('local/pld:editcourserules', $coursecontext)) {
             $iconurl = $OUTPUT->image_url('pld', 'theme');
             $pldicon = '<img src="'.$iconurl.'" class="svg-icon" alt="" role="presentation">';
             $pldname = get_string('pld', 'theme_snap');
@@ -643,7 +612,7 @@ EOF;
         }
 
         // Outcomes if enabled.
-        if(!empty($CFG->core_outcome_enable)) {
+        if (!empty($CFG->core_outcome_enable)) {
             $iconurl = $OUTPUT->image_url('outcomes', 'theme');
             $outcomesicon = '<img src="'.$iconurl.'" class="svg-icon" alt="" role="presentation">';
 
@@ -656,7 +625,8 @@ EOF;
                 $outcomesets = new \core_outcome\model\outcome_set_repository();
                 if ($outcomesets->course_has_any_outcome_sets($COURSE->id)) {
                     $links[] = array(
-                        'link'  => 'outcome/course.php?contextid='.$coursecontext->id.'&action=report_course_user_performance_table',
+                        'link'  => 'outcome/course.php?contextid='.$coursecontext->id.
+                            '&action=report_course_user_performance_table',
                         'title' => $outcomesicon.get_string('outcomes', 'outcome'),
                     );
                 }
@@ -684,6 +654,37 @@ EOF;
                     'link' => 'badges/view.php?type=' . BADGE_TYPE_COURSE . '&id=' . $COURSE->id,
                     'title' => $badgesicon.get_string('badges', 'badges')
                 );
+            }
+        }
+
+        // Mediasite. (GT Mod - core component check needs to be first in evaluation or capability check error will
+        // occur when the module is not installed).
+        if ( \core_component::get_component_directory('mod_mediasite') !== null &&
+            $COURSE->id > 1 && has_capability('mod/mediasite:courses7', $coursecontext) &&
+            is_callable('mr_on') &&
+            mr_on("mediasite", "_MR_MODULES")) {
+            require_once($CFG->dirroot . "/mod/mediasite/mediasitesite.php");
+            $iconurl = $OUTPUT->image_url('icon', 'mediasite');
+            $badgesicon = '<img src="'.$iconurl.'" class="svg-icon" alt="" role="presentation">';
+            $courseconfig = $DB->get_record('mediasite_course_config', array('course' => $COURSE->id));
+            if (!empty($courseconfig->mediasite_courses_enabled) && $courseconfig->mediasite_site) {
+                $site = new \Sonicfoundry\MediasiteSite($courseconfig->mediasite_site);
+                $url = new moodle_url(
+                    '/mod/mediasite/courses7.php',
+                    array('id' => $COURSE->id, 'siteid' => $courseconfig->mediasite_site)
+                );
+                $links[] = array(
+                    'link' => $url->out_as_local_url(false),
+                    'title' => $badgesicon . $site->get_integration_catalog_title()
+                );
+            } else {
+                foreach (get_mediasite_sites(true, false) as $site) {
+                    $url = new moodle_url('/mod/mediasite/courses7.php', array('id' => $COURSE->id, 'siteid' => $site->id));
+                    $links[] = array(
+                        'link' => $url->out_as_local_url(false),
+                        'title' => $badgesicon . $site->integration_catalog_title
+                    );
+                }
             }
         }
 
@@ -758,7 +759,7 @@ EOF;
         $userpicture = new \user_picture($USER);
         $userpicture->link = false;
         $userpicture->alttext = false;
-        $userpicture->class = 'userpicture snap-icon'; // icon class for margin.
+        $userpicture->class = 'userpicture snap-icon'; // Icon class for margin.
         $userpicture->size = 100;
         $userpic = $OUTPUT->render($userpicture);
 
@@ -779,7 +780,7 @@ EOF;
 
         // User grade.
         if (has_capability('gradereport/overview:view', $coursecontext)) {
-            $grade = local::course_grade($COURSE);
+            $grade = local::course_grade($COURSE, true);
             $coursegrade = '-';
             if (isset($grade->coursegrade['percentage'])) {
                 $coursegrade = round($grade->coursegrade['percentage']);
@@ -790,7 +791,8 @@ EOF;
             $userboard .= '<div class="col-xs-3 text-center snap-student-dashboard-grade">';
             $userboard .= '<h4 class="h6">' . get_string('grade') . '</h6>';
             $userboard .= '<a href="' . $moodleurl . '">';
-            $userboard .= '<div class="js-progressbar-circle snap-progress-circle snap-progressbar-link" value="' . $coursegrade . '"></div>';
+            $userboard .= '<div class="js-progressbar-circle snap-progress-circle snap-progressbar-link" value="';
+            $userboard .= s($coursegrade) . '"></div>';
             $userboard .= '</a>';
             $userboard .= '</div>';
         }

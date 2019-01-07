@@ -23,12 +23,7 @@
 Feature: When the moodle theme is set to Snap, a course tools section is available.
 
   Background:
-    Given the following config values are set as admin:
-      | theme | snap |
-      | defaulthomepage | 0 |
-    And the following config values are set as admin:
-      | personalmenulogintoggle | 0 | theme_snap |
-    And the following "courses" exist:
+    Given the following "courses" exist:
       | fullname | shortname | category | format |
       | Course 1 | C1        | 0        | topics |
     And the following "users" exist:
@@ -98,7 +93,7 @@ Feature: When the moodle theme is set to Snap, a course tools section is availab
 
   @javascript
   Scenario Outline: Course tools show automatically for single activity format set to hsuforum of types general / single.
-    Given I am using Moodlerooms
+    Given I am using Blackboard Open LMS
     And the course format for "C1" is set to "singleactivity" with the following settings:
       | name      | activitytype |
       | value     | hsuforum        |
@@ -124,3 +119,30 @@ Feature: When the moodle theme is set to Snap, a course tools section is availab
       | general | Disabled          | Prohibit            | should not    | should not |
       | single  | Enabled           | Allow               | should        | should     |
       | single  | Disabled          | Prohibit            | should not    | should not |
+
+  @javascript
+  Scenario: Grade and progress are shown to students only when allowed by settings.
+    Given completion tracking is "Disabled" for course "C1"
+    And I set the following system permissions of "Student" role:
+      | capability                | permission            |
+      | gradereport/overview:view | Prohibit              |
+    When I log in as "student1"
+    And I am on the course main page for "C1"
+    And I click on "a[href=\"#coursetools\"]" "css_element"
+    And ".snap-student-dashboard-progress" "css_element" should not exist
+    And ".snap-student-dashboard-grade" "css_element" should not exist
+    Given completion tracking is "Enabled" for course "C1"
+    And I set the following system permissions of "Student" role:
+      | capability                | permission            |
+      | gradereport/overview:view | Allow                 |
+    And I am on the course main page for "C1"
+    And I click on "a[href=\"#coursetools\"]" "css_element"
+    And ".snap-student-dashboard-progress" "css_element" should exist
+    And ".snap-student-dashboard-grade" "css_element" should exist
+    Given the following config values are set as admin:
+      | showcoursegradepersonalmenu | 0 | theme_snap |
+    And I reload the page
+    And I am on the course main page for "C1"
+    And I click on "a[href=\"#coursetools\"]" "css_element"
+    And ".snap-student-dashboard-progress" "css_element" should exist
+    And ".snap-student-dashboard-grade" "css_element" should exist

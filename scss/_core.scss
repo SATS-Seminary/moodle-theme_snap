@@ -16,14 +16,21 @@
  * Snap core swatch.
  *
  * @package   theme_snap
- * @copyright Copyright (c) 2015 Moodlerooms Inc. (http://www.moodlerooms.com)
+ * @copyright Copyright (c) 2015 Blackboard Inc. (http://www.blackboard.com)
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 // overwrite some global CSS from a turnitin mod
 // see https://github.com/jmcgettrick/MoodleDirectV2/issues/50
 
+/* stylelint-disable declaration-no-important*/
+
 html {
     -webkit-font-smoothing: auto !important;
+    font-size: 18px;
+}
+
+#moodle-page {
+    font-size: 1.1rem;
 }
 
 // Snap Layout yo...
@@ -116,7 +123,10 @@ table.boxwidthwide {
         margin: 2em auto;
         max-width: 30rem;
         width: 100%;
-        background-color: rgba(255,255,255,0.9);
+        background-color: rgba(255, 255, 255, 0.9);
+        #password {
+            margin-top: 1em;
+        }
     }
     // The site name.
     .snap-logo-sitename {
@@ -188,7 +198,7 @@ body:not(.snap-js-loaded) .js-only {
     padding: 0 4%;
 }
 
-/* animations */
+// Animations.
 @keyframes snap-drop {
     0% {
         transform: matrix(1, 0, 0, 1, 0, -600);
@@ -238,12 +248,6 @@ body.ie {
     -ms-overflow-style: scrollbar;
 }
 
-input:focus,
-textarea:focus,
-a:focus {
-    outline: 0;
-}
-
 label {
     font-weight: 500;
 }
@@ -255,11 +259,11 @@ select {
 
 select:disabled,
 input:disabled,
-input:disabled+label {
+input:disabled + label {
     opacity: 0.5;
 }
 
-::disabled {
+:disabled {
     cursor: not-allowed;
 }
 
@@ -267,7 +271,8 @@ textarea {
     max-width: 100%;
 }
 
-small, .small {
+small,
+.small {
     font-size: $font-size-sm !important;
 }
 
@@ -280,15 +285,19 @@ table,
 }
 
 .blockquote {
+    border-left: .25rem solid #eceeef;
     border-left-color: $brand-primary;
-    font-size: 1rem;
+    padding: .5rem 1rem;
 }
 
 .blockquote-reverse {
+    border-right: .25rem solid #eceeef;
     border-right-color: $brand-primary;
+    padding: .5rem 1rem;
 }
 
 blockquote {
+    font-size: 1rem;
     @extend .blockquote;
 }
 
@@ -303,7 +312,7 @@ table img {
     min-width: 12px;
 }
 
-table.results td.graph>img {
+table.results td.graph > img {
     min-width: 0;
 }
 
@@ -343,10 +352,10 @@ img.icon.hide {
 }
 
 @mixin svg-icon {
-  width: 2rem;
-  height: 2rem;
-  margin: 0 0.3rem;
-  vertical-align: middle;
+    width: 2rem;
+    height: 2rem;
+    margin: 0 0.3rem;
+    vertical-align: middle;
 }
 
 .svg-icon {
@@ -357,6 +366,9 @@ img.icon.hide {
 i.icon,
 p.tree_item:before {
     color: #999;
+}
+p.tree_item.hasicon i.nav-missing-icon:before {
+    content: '■'; // Where settings nav icon is missing use this.
 }
 
 .mediaplugin_videojs > div {
@@ -435,22 +447,19 @@ li {
 }
 
 hr {
-    margin-top: 0.75em;
-    margin-bottom: 0.75em;
-    height: 1.75em;
+    height: 1px;
+    margin: 2em 2%;
     border: 0;
-
-    // border-top: 1px solid $brand-primary; customisable
 }
 
 .block .content hr {
-    margin: 0.3;
+    margin: .3em;
     height: 1px;
 }
 
 #page-header h1 {
     margin-top: 0;
-    line-height: 1;
+    line-height: 1.2;
 }
 
 #region-main textarea {
@@ -505,9 +514,9 @@ select,
         &,
         &:hover,
         &:focus {
-            color: $nav-tabs-active-link-hover-color;
-            background-color: $nav-tabs-active-link-hover-bg;
-            border: 1px solid $nav-tabs-active-link-hover-border-color;
+            color: $nav-tabs-link-active-color;
+            background-color: $nav-tabs-link-active-bg;
+            border: 1px solid $nav-tabs-link-active-border-color;
             border-bottom-color: transparent;
             cursor: default;
         }
@@ -525,55 +534,42 @@ textarea {
     max-width: 100%;
 }
 
-.section-modchooser-text,
-#changenumsections .increase-sections,
-#changenumsections .reduce-sections,
-.paging.paging-morelink a,
-button#local-joulegrader-preview-button,
-button.atto_equation_submit,
-a.yui3-button,
-.yui-button button,
-.felement.ftext input + button,
-.header-button-group .btn,
-.btn.btn-primary,
-.btn.btn-default,
 .button-group > button,
 input.form-submit,
-input[type="button"],
-input[type="submit"],
-button[type="submit"],
-.moodle-dialogue-content button,
-button#restrictbygroup,
-button#livelogs-pause-button,
-#page-admin-tool-monitor-managerules a > button,
-input[type="reset"] {
-    font-family: $font-family-system;
-    background: transparent;
+.atto_form button,
+.gradingform_checklist.editor .addgroup input,
+.gradingform_checklist.editor .additem input,
+.gradingform_rubric.editor .addlevel input,
+.gradingform_rubric.editor .addcriterion input,
+.paging.paging-morelink a,
+a.yui3-button,
+.yui-button button,
+#page-site-index .section-modchooser-link .section-modchooser-text {
 
-    &:hover,
-    &:focus {
+    // Imitate btn.btn-secondary CSS for buttons without proper
+    // Bootstrap classes applied to them.
+    transition: all 0.4s ease-in-out;
+    background: transparent;
+    border-radius: 4px;
+    border-width: 1px;
+    border-style: solid;
+    // Em's used to allow for small and large buttons.
+    padding: .5em 1em;
+
+    &:hover:not(:disabled),
+    &:focus:not(:disabled),
+    &:active:not(:disabled),
+    &.active:not(:disabled) {
 
         text-decoration: none;
         color: #fff;
-        background: $brand-primary;
+    }
+
+    &:disabled {
+        opacity: 0.65;
     }
 }
 
-.btn.btn-inverse {
-
-    & {
-        color: #fff;
-        border-color: #fff;
-    }
-
-    &:hover,
-    &:active,
-    &:focus {
-        color: $brand-primary;
-        background: #fff;
-        border-color: $brand-primary;
-    }
-}
 .btn.btn-solid {
     &,
     &:active,
@@ -582,7 +578,7 @@ input[type="reset"] {
     }
 }
 
-.btn-group > button + button {
+.button-group > button + button {
     margin-left: 1em;
 }
 
@@ -610,6 +606,32 @@ input[type="reset"] {
     }
 }
 
+#page-report-competency-index .header-button-group {
+    padding-top: 10px;
+    padding-left: 5px;
+}
+
+#page-badges-award .recipienttable tr td.actions .actionbutton {
+    font-family: $font-family-system;
+    transition: all 0.4s ease-in-out;
+    color: $brand-primary;
+    border-color: $brand-primary;
+    border-radius: 4px;
+    border-width: 1px;
+    border-style: solid;
+    padding: .5em 1em;
+
+    &:hover,
+    &:focus,
+    &:active,
+    &.active {
+        background-color: $brand-primary;
+        color: #fff;
+        border-color: $brand-primary;
+        text-decoration: none;
+    }
+}
+
 // -------------------------
 // Snap theme helper classes
 // -------------------------
@@ -626,14 +648,10 @@ input[type="reset"] {
 
 .userpicture.defaultuserpic {
     border: 1px solid #e5e5e5;
-
-    .fixy & {
-        border: none;
-    }
 }
 
 // -------------------------
-// Replacing font icon with svgs
+// Icons inserted as pseudo elements.
 // -------------------------
 
 .snap-icon-close:before {
@@ -645,9 +663,16 @@ input[type="reset"] {
     margin: 0.1em auto;
 }
 
-#snap-footer-alert .snap-icon-close:before,
-.fixy .snap-icon-close:before {
-    background: transparent url("[[pix:theme|close_x_white]]") no-repeat 50% 50%;
+.snap-icon-close:focus {
+    text-decoration: underline !important;
+}
+
+// White close icon.
+#snap-footer-alert,
+#snap-pm {
+    .snap-icon-close:before {
+        background-image: url("[[pix:theme|close_x_white]]");
+    }
 }
 
 .icon-arrow-left:before,
@@ -661,7 +686,7 @@ input[type="reset"] {
 }
 
 .icon-arrow-left:before {
-    background: transparent url("[[pix:theme|left-arrow]]") no-repeat 50% 50%;
+    background-image: url("[[pix:theme|left-arrow]]");
 }
 
 // -------------------------
@@ -673,16 +698,10 @@ input[type="reset"] {
     @include bg-cover;
 }
 
-#snap-home.logo {
-    display: block;
-    background-color: transparent;
-    background-repeat: no-repeat;
-    background-size: contain;
-    background-position: left center;
-    height: 40px;
-    width: 50%;
+#page-header {
+    overflow: hidden;
+    min-height: 250px;
 }
-
 
 .snap-media-object {
     @include clearfix;
@@ -690,12 +709,12 @@ input[type="reset"] {
     padding: 0.5em 0;
     // Block display for keyboard user focus.
     > a:focus {
-         display: block;
+        display: block;
     }
 
     // media o media
-    >a>img,
-    >img {
+    > a > img,
+    > img {
         float: left;
         display: block;
         width: 36px;
@@ -708,7 +727,7 @@ input[type="reset"] {
     .snap-media-body {
         overflow: hidden;
 
-        // for fixy - need to re-visit when we re-use more widley
+        // for personal menu updates - need to re-visit when we re-use more widley
         // in the messaging system we ellispe text
         p {
             white-space: nowrap;
@@ -762,64 +781,6 @@ input[type="reset"] {
 
 }
 
-// Message badge alerts
-.message_badge_message,
-.message_badge_empty {
-    border-top: none;
-}
-
-.message_badge_message_subject {
-    padding-right: 0;
-}
-
-.message_badge_message_close {
-    display: none;
-}
-
-.message_badge_message_text article {
-    font-size: 0.9em;
-    font-family: $font-family-serif;
-}
-
-.message_badge_message_content {
-    margin-left: 65px;
-}
-
-/**
-Its pointless using a colour to visually show that the message is read as we can already tell this by the fact the
-read button has been removed and the message text is visible
-**/
-.message_badge_message.dimmed_text {
-    color: $body-color;
-
-    .message_badge_message_text,
-    .message_badge_message_text a {
-        color: $body-color !important;
-    }
-}
-
-.message_badge_user_picture {
-    margin-right: 18px;
-
-    img {
-        width: 50px;
-    }
-}
-
-.alert_stream {
-    .message_badge_container {
-        .message_badge_overlay,
-        .message_badge_message_overlay {
-            background-color: transparent;
-            border: none;
-            max-height: none;
-            width: 100%;
-            overflow: visible;
-        }
-    }
-}
-
-// End of message badge alerts
 // -------------------------
 // Layout of moodle/snap DOM structure
 // -------------------------
@@ -857,16 +818,16 @@ footer #moodle-footer
     }
 }
 
-// Mr.nav - he's there and fixed to the top of your page
+// -------------------------
+// Mr.nav - he's there, fixed to the top of your page
 // -------------------------
 
 #mr-nav {
     position: fixed;
-    width: 100%;
+    width: 100vw;
     z-index: 23;
-    line-height: 2;
-    padding: 0.5em 0 0.5em 4%;
-    background-color: rgba(255,255,255,0.95);
+    padding: .5em 4%;
+    background-color: $nav-bg;
 
     //headroom js http://wicky.nillia.ms/headroom.js/
     &.headroom--unpinned {
@@ -887,10 +848,148 @@ footer #moodle-footer
         */
     }
 
-    &.errors-found {
+    .popover-region-notifications > div > .icon {
+        color: $nav-color;
 
-        // make header pink
-        // background-color: #fcc !important;
+        &:hover {
+            color: $nav-color-hover;
+        }
+    }
+
+    a {
+        color: $nav-color;
+
+        &:hover,
+        &:focus {
+            color: $nav-color-hover;
+        }
+    }
+
+    .popover-region-container a {
+        color: $brand-primary;
+
+        &:hover {
+            color: darken($brand-primary, 8%);
+        }
+        &:focus {
+            color: darken($brand-primary, 30%);
+            text-decoration: underline;
+        }
+    }
+
+    .snap-login-button {
+        color: $nav-login-color;
+        background-color: $nav-login-bg;
+        border-color: $nav-login-bg;
+
+        margin: 0 1rem;
+
+        &:hover,
+        &:focus {
+            color: darken($nav-login-color, 8%);
+            background-color: darken($nav-login-bg, 8%);
+            border-color: darken($nav-login-bg, 8%);
+        }
+
+    }
+}
+
+#mr-nav #snap-pm-trigger {
+    display: inline;
+    border: none;
+    position: relative; // Position to support message badge.
+    padding-left: 1em; // Padding to support message badge.
+    padding-right: 0.5em;
+    padding-top: 1.2em;
+    padding-bottom: 1.16em;
+    margin-right: 0.5em;
+    color: $nav-button-color;
+    background-color: $nav-button-bg;
+
+    .userpicture {
+        width: 40px;
+        height: auto;
+        @include alakazam;
+    }
+    &:hover,
+    &:focus {
+        .userpicture {
+            transform: scale(1.2);
+        }
+        color: darken($nav-button-color, 8%);
+    }
+
+    // Core alerts badge.
+    .conversation_badge_count {
+        height: 18px;
+        width: 18px;
+        border-radius: 50%;
+        padding: 0;
+        line-height: inherit;
+        color: white;
+        position: absolute;
+        left: .33em; // Magic number.
+        top: .6em; // Magic number.
+        font-size: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        &.hidden {
+            display: none;
+        }
+    }
+}
+
+@include media-breakpoint-down(sm) {
+
+    #mr-nav #snap-pm-trigger {
+        padding-bottom: 1.36em;
+    }
+}
+
+#snap-home {
+    display: inline-block;
+    padding: .5em 0;
+    width: 19em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    // If logo image.
+    &.logo {
+        display: inline-block;
+        height: 45px;
+        #snap-home.logo {
+            max-width: 45%;
+            @media (max-width: 414px) {
+                .pull-right.js-only {
+                    margin-top: 3em;
+                }
+            }
+        }
+        background-color: transparent;
+        background-repeat: no-repeat;
+        background-size: contain;
+        background-position: left center;
+    }
+}
+
+// Admin menu trigger.
+#snap-admin-icon {
+    @include alakazam;
+    .snap-gear-icon {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 5;
+        stroke-miterlimit: 10;
+    }
+    // Animate and change colour.
+    &:hover,
+    &:focus {
+        transform: rotate(90deg);
+        .snap-gear-icon {
+            fill: currentColor;
+        }
     }
 }
 
@@ -968,13 +1067,19 @@ header#page-header
 #page-header {
     padding-top: 4em;
     padding-bottom: 0.5em;
+    @media (max-width: 1001px) {
+        padding-top: 7em;
+    }
+    @media (max-width: 465px) {
+        padding-top: 10.5rem;
+    }
 }
 
 // Breadcrumb - not really a breadcrumb like on the web, but something moodley
 // -------------------------
 
 .breadcrumb-nav {
-    margin-bottom: 0;
+    padding: .5em 0;
     float: none;
     @include media-breakpoint-up(md) {
         margin-top: -0.5em;
@@ -986,6 +1091,9 @@ header#page-header
     padding: 0;
     font-size: $font-size-sm;
     display: block;
+    li.breadcrumb-item {
+        display: inline-block;
+    }
 }
 
 @include media-breakpoint-down(md) {
@@ -1019,29 +1127,29 @@ header#page-header
 
  ****************************/
 
-
-
-// if the course has an image
+// If the page has an image - courses & catagories.
 .mast-image {
     .breadcrumb {
         li,
         li:before,
-        >li+li:before,
+        > li + li:before,
         a {
             text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.6);
             color: white;
         }
     }
 
-    #page-mast h1 {
-        a, a:hover {
+    #page-mast > {
+        h1,
+        h1 a,
+        h1 a:hover {
             color: white;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
         }
     }
-
+    // Add a bg colur to the toc in page header.
     #course-toc {
-        background-color: rgba(255,255,255,0.95);
+        background-color: rgba(255, 255, 255, 0.95);
     }
 }
 
@@ -1079,16 +1187,10 @@ header#page-header
 
 // Admin block link.
 #admin-menu-trigger {
-    width: 40px;
-    height: 40px;
-    margin-right: 1em;
-    border: 1px solid $gray-lighter;
-    border-radius: 100%;
-
-    img {
-        padding: 0.5em;
-        max-height: 100%;
-    }
+    width: 30px;
+    height: 30px;
+    margin-left: .75em;
+    margin-top: .5em;
 }
 
 #page-report-outline-user .section {
@@ -1140,7 +1242,7 @@ header#page-header
 #page-site-index {
     #region-main {
         max-width: 100%;
-        padding: 0;
+        padding: 1em 0 0 0;
         margin: 0 auto;
     }
 
@@ -1152,9 +1254,6 @@ header#page-header
         padding: 0;
         margin: 0;
     }
-    #page-header {
-        margin-bottom: 2em;
-    }
 
     #snap-coverimagecontrol {
         position: absolute;
@@ -1163,10 +1262,17 @@ header#page-header
     }
 
     #page-mast {
-        background-color: rgba(255,255,255,0.9);
+        background-color: rgba(255, 255, 255, 0.9);
         display: inline-block;
         padding: 1em 2%;
-        margin: 10em 4%;
+        margin: 10em 4% 1em;
+    }
+
+    #moodle-page {
+        /* GT Mod - I've removed this because I don't like it - the cover image ends up appearing half way under
+        the fixed menu and it looks very poor IMO.
+         */
+        /*padding-top: 2em;*/
     }
 }
 
@@ -1185,17 +1291,11 @@ header#page-header
     }
 }
 
-.path-course #page-mast h1 {
-    display: inline;
-}
-
 #page-mast .snap-login-button {
     display: inline-block;
     margin-top: 1em;
 }
-#mr-nav .snap-login-button {
-    margin-right: 1em;
-}
+
 // -------------------------
 // Front page carousel componant.
 // -------------------------
@@ -1217,7 +1317,7 @@ header#page-header
         text-shadow: none;
         color: #666;
         // Add snap cover styles.
-        background-color: rgba(255,255,255,0.9);
+        background-color: rgba(255, 255, 255, 0.9);
         padding: 1em 2%;
         margin-top: 2em;
     }
@@ -1228,6 +1328,7 @@ header#page-header
 
         li {
             border-color: $gray-light;
+            background-color: $snap-carousel-buttons;
         }
         .active {
             background-color: $gray-light;
@@ -1243,8 +1344,27 @@ header#page-header
     display: none;
 }
 
+// Front page core elements.
+#page-site-index {
+    // Front page course search box.
+    #coursesearch .input-group {
+        max-width: 300px;
+    }
+    // Front page edit summary - hide cog icon.
+    .sitetopic .fa-cog {
+        display: none;
+    }
+    // Front page add resource - hide + icon.
+    .section-modchooser-link .fa-plus {
+        display: none;
+    }
+}
+
 #frontpage-course-list {
     padding: 1em 4%;
+    .paging {
+        padding: 1em;
+    }
 }
 
 #page-site-index .sitetopic,
@@ -1270,7 +1390,7 @@ header#page-header
 #frontpage-category-combo h2 {
     padding: 0.5em 0;
     text-align: center;
-    font-size: $font-size-h1;
+    font-size: $h1-font-size;
 }
 
 /* FRONT PAGE SITE NEWS */
@@ -1300,7 +1420,7 @@ header#page-header
 }
 
 .news-article-content h3 {
-    font-size: $font-size-h2;
+    font-size: $h2-font-size;
 }
 
 .news-article-image {
@@ -1334,10 +1454,6 @@ header#page-header
     .news-article-preview,
     .news-article-image {
         display: none;
-    }
-
-    .news-article-inner {
-
     }
 
     .news-article-message {
@@ -1430,6 +1546,7 @@ span.calendar_event_global,
 li.calendar_event_global:before,
 td.calendar_event_global > a {
     background-color: $brand-success;
+    color: #fff !important;
 }
 
 span.calendar_event_course,
@@ -1438,6 +1555,7 @@ td.calendar_event_course > a {
 
     //salmon
     background-color: salmon;
+    color: #fff !important;
 }
 
 span.calendar_event_group,
@@ -1446,12 +1564,14 @@ td.calendar_event_group > a {
 
     // yellow
     background-color: #fdd652;
+    color: #fff !important;
 }
 
 span.calendar_event_user,
 li.calendar_event_user:before,
 td.calendar_event_user > a {
     background-color: $brand-info;
+    color: #fff !important;
 }
 
 td.calendar_event_global,
@@ -1540,9 +1660,9 @@ li.calendar_event_user:before {
 
 .maincalendar .day .day {
     border-radius: 100%;
-    width: 4em;
-    height: 4em;
-    padding: 1.2em;
+    width: 3em;
+    height: 3em;
+    padding: 0.4em;
     border: 1px solid #fff;
     margin: 0 auto;
 }
@@ -1590,6 +1710,15 @@ ul.events-new + ul.events-underway {
 }
 
 #dateselector-calendar-panel {
+    #dateselector-calendar-content {
+        padding: 10px;
+    }
+
+    .yui3-calendar-header {
+        display: block;
+        padding-bottom: 10px;
+    }
+    
     .yui3-calendarbase {
         width: 350px !important;
     }
@@ -1623,14 +1752,17 @@ ul.events-new + ul.events-underway {
         width: 30px;
         background-repeat: no-repeat;
         background-position: center;
+        position: absolute;
     }
 
     .yui3-calendarnav-nextmonth {
         background-image: url("[[pix:theme|right-arrow]]");
+        right: 0;
     }
 
     .yui3-calendarnav-prevmonth {
         background-image: url("[[pix:theme|left-arrow]]");
+        left: 0;
     }
 
     .yui3-calendar-day,
@@ -1666,7 +1798,7 @@ ul.events-new + ul.events-underway {
 
         .yui3-calendar-header-label {
             font-weight: 100;
-            font-size: $font-size-h4;
+            font-size: $h4-font-size;
         }
 
         .yui3-calendarnav-nextmonth,
@@ -1761,8 +1893,8 @@ ul.events-new + ul.events-underway {
 }
 
 .path-mod-workshop .collapsibleregioncaption {
-    font-size: $font-size-h3;
-    font-weight: 300;
+    font-size: $h3-font-size;
+    font-weight: 400;
 }
 
 // -------------------------
@@ -1817,10 +1949,46 @@ ul.events-new + ul.events-underway {
     @extend .btn-secondary;
 }
 
+.path-mod-quiz #mod_quiz_navblock .qnbutton {
+    overflow: hidden;
+}
+
+.path-mod-quiz #mod_quiz_navblock .qnbutton:hover, .path-mod-quiz #mod_quiz_navblock .qnbutton:focus {
+    background-color: $brand-primary;
+    border: 1px solid $brand-primary;
+    color: #ffffff;
+}
+
 #page-mod-quiz-edit .section .activity .actions {
     position: absolute;
     right: 0;
-    top: 0
+    top: 0;
+}
+
+#page-mod-quiz-review {
+    .formulation {
+        select {
+            .custom-select {
+                padding-right: 5em;
+            }
+            &:disabled {
+                color: #818a91 !important;
+                cursor: not-allowed;
+                background-color: #eceeef !important;
+                padding-right: 5em;
+            }
+            width: auto !important;
+        }
+
+        input[type="text"] {
+            width: auto !important;
+        }
+
+        input.form-control[readonly] {
+            background-color: #eceeef !important;
+            opacity: 1;
+        }
+    }
 }
 
 // Quiz setup form //
@@ -1867,6 +2035,10 @@ ul.events-new + ul.events-underway {
 
 .questioncontainer.random .questioncontentcontainer {
     width: 100%;
+}
+
+#page-question-import .mform .form-inline br + label {
+    width: 95%;
 }
 
 #page-mod-quiz-edit .questioncontentcontainer div.randomquestionqlist {
@@ -1969,13 +2141,17 @@ ul.events-new + ul.events-underway {
 #page-mod-quiz-edit #categoryquestions .questiontext,
 .questioncontentcontainer label,
 #page-mod-quiz-edit div.question div.content .questiontext {
-    font-weight: 300;
+    font-weight: 400;
+}
+
+#page-mod-quiz-edit .instancemaxmarkcontainer input[name='maxmark'] {
+    height: 1.5em !important;
 }
 
 // Quiz itself //
 
 // For quiz, we don't want two coluns.
-.path-mod-quiz #moodle-blocks>aside {
+.path-mod-quiz #moodle-blocks > aside {
     column-count: 1 !important;
 }
 
@@ -2009,11 +2185,11 @@ ul.events-new + ul.events-underway {
 
 .que h3.no,
 .que span.qno {
-    font-size: $font-size-h2;
-    font-weight: 300;
+    font-size: $h2-font-size;
+    font-weight: 400;
 }
 
-.que .info>div {
+.que .info > div {
     display: inline-block;
     font-size: $font-size-sm;
     color: $gray-light;
@@ -2142,16 +2318,35 @@ ul.events-new + ul.events-underway {
 // Forum
 // -------------------------
 
-.forumsearch {
-    padding: 1em;
-    float: right;
+#page-mod-forum-discuss {
+    .discussioncontrol.exporttoportfolio,
+    .discussioncontrol.displaymode,
+    .discussioncontrol.movediscussion {
+        margin: auto;
+        width: 100%;
+        padding-bottom: 10px;
+    }
+
+    div {
+        .no-overflow {
+            overflow: hidden;
+        }
+
+        .grouppictures {
+            margin-top: 0.5em;
+        }
+    }
 }
 
-// on front page the forum has extranious options //
-.course-1 {
-    .movediscussion,
-    .displaymode {
-        display: none;
+#page-mod-forum-post {
+    div {
+        .no-overflow {
+            overflow: hidden;
+        }
+
+        .grouppictures {
+            margin-top: 0.5em;
+        }
     }
 }
 
@@ -2416,7 +2611,8 @@ table#user-grades tr.avg td.cell {
         // copied from less/bootstrap3/forms.scss .form-control
         color: $input-color;
         background-color: $input-bg;
-        background-image: none; // Reset unusual Firefox-on-Android default style; see https://github.com/necolas/normalize.css/issues/214
+        // Reset unusual Firefox-on-Android default style; see https://github.com/necolas/normalize.css/issues/214
+        background-image: none;
         border: 1px solid $input-border-color;
         border-radius: $input-border-radius;
         @include box-shadow(inset 0 1px 1px rgba(0,0,0,.075));
@@ -2493,115 +2689,9 @@ table#user-grades tr.avg td.cell {
     }
 }
 
-#local-nortongrader-navigation {
-    background-color: transparent;
-    text-align: right;
-}
-
-#local-joulegrader-resize,
-#local-nortongrader-resize {
-
-    // display: none;
-}
-
 // TODO short term fix for Snap disappearing header interfering with scrolling Gradebook
 #page-grade-report-grader-index header#mr-nav {
     animation-name: none;
-}
-
-#page-grade-report-joulegrader-index #joule-grades-thead {
-    table-layout: fixed;
-}
-
-#page-grade-report-nortongrader-index,
-#page-grade-report-joulegrader-index {
-    #gradereport-joulegrader-navbox,
-    #gradereport-nortongrader-navbox {
-        border: 0;
-        background: none;
-    }
-
-    table .header[scope="col"] {
-        background-color: #fff;
-        font-size: 13px; // SHAME - magic number
-    }
-
-    table {
-        margin: 0;
-        text-align: right;
-    }
-
-    #joule-grades-thead-wrap,
-    #joule-grades-leftcol-wrap,
-    table.joule-grades {
-        border: none;
-        font-size: $font-size-base;
-    }
-
-    table.joule-grades {
-        tr.odd td.cell {
-            background-color: $table-bg-accent;
-
-            &.overridden,
-            &.ajaxoverridden {
-                background-color: #efd9a4;
-            }
-        }
-    }
-
-    table.joule-grades td,
-    table.joule-grades th {
-        border-right: none;
-        border-left: none;
-        border-width: 1px;
-    }
-
-    table.joule-grades th.item,
-    table.joule-grades th.categoryitem,
-    table.joule-grades th.courseitem {
-        border-bottom-color: $table-border-color;
-    }
-
-    #joule-grades-leftcol-wrap {
-        border-right: 1px solid $table-border-color;
-    }
-
-    table.joule-grades th,
-    table.joule-grades td {
-        padding: $table-sm-cell-padding;
-    }
-
-    #joule-grades-fthead {
-        margin-top: -1px;
-    }
-
-    #joule-grades-leftcol {
-        margin-top: 0;
-    }
-
-    #joule-grades,
-    #joule-grades-leftcol {
-        .row {
-            &.nortongraderactionmenu,
-            &.joulegraderactionmenu {
-                margin-left: 0;
-                margin-right: 0;
-
-                &:before,
-                &:after {
-                    display: none;
-                }
-            }
-        }
-    }
-
-    #joule-grades-fthead {
-        width: auto;
-    }
-
-    #joule-grades-leftcol-wrap {
-        border-bottom: none;
-    }
 }
 
 #page-local-joulegrader-view {
@@ -2655,6 +2745,7 @@ table#user-grades tr.avg td.cell {
 
 // Whitelist - pages need to be full width.
 .path-mod-assign,
+.path-mod-hvp,
 .path-grade,
 .path-admin-report,
 .pagelayout-admin,
@@ -2732,9 +2823,34 @@ table#user-grades tr.avg td.cell {
 // bootstrap alerts
 
 .alert {
-    clear: both;
-    border: 0;
-    border-left: 3em solid;
+    &.alert-info,
+    &.alert-success,
+    &.alert-danger,
+    &.alert-warning {
+        clear: both;
+        border: 0;
+        border-left: 3em solid;
+    };
+    &.alert-info {
+        color: $brand-info;
+        background-color: rgba($brand-info, .1);
+        border-color: $brand-info;
+    };
+    &.alert-success {
+        color: $brand-success;
+        background-color: rgba($brand-success, .1);
+        border-color: $brand-success;
+    };
+    &.alert-danger {
+        color: $brand-danger;
+        background-color: rgba($brand-danger, .1);
+        border-color: $brand-danger;
+    };
+    &.alert-warning {
+        color: $brand-warning;
+        background-color: rgba($brand-warning, .1);
+        border-color: $brand-warning;
+    };
 }
 
 #notice {
@@ -2747,7 +2863,7 @@ table#user-grades tr.avg td.cell {
     // pull buttons up into the #notice when they are placed
     // after it, rather than inside it.
 
-    &+ .continuebutton {
+    & + .continuebutton {
         margin-top: -3em;
     }
 
@@ -2755,6 +2871,10 @@ table#user-grades tr.avg td.cell {
         text-align: center;
         border-top: none;
     }
+}
+
+#page-course-loginas #notice {
+    margin-top: 3em;
 }
 
 // bootstrap labels
@@ -2905,6 +3025,9 @@ body.hascontinuecancel.path-site #page {
         min-width: 90%;
         height: 100%;
     }
+    video#player {
+        max-height: 50vh;
+    }
 }
 
 // -------------------------
@@ -2920,6 +3043,11 @@ body:not(.pagelayout-course) #moodle-footer {
     clear: both;
     color: $gray-lighter;
     background-color: $body-color;
+}
+
+#snap-footer-content,
+#snap-socialmedia-links {
+    padding: 1em 0;
 }
 
 #moodle-footer {
@@ -3020,14 +3148,6 @@ http://css-spinners.com/css/spinner/three-quarters.css
     height: 32px;
 }
 
-/** folderview format **/
-#page-course-view-folderview {
-    &.jsenabled #tab_addBlock,
-    .section-navigation .jumpmenu {
-        display: none;
-    }
-}
-
 /** fix feedback field sizes on mobile devices **/
 @include media-breakpoint-down(sm) {
     .mform {
@@ -3097,7 +3217,7 @@ http://css-spinners.com/css/spinner/three-quarters.css
 }
 
 // nicer positioning of fatal errors
-div[data-rel = fatalerror] {
+div[data-rel=fatalerror] {
     margin: 1em;
 }
 
@@ -3119,7 +3239,6 @@ div[data-rel = fatalerror] {
     &:focus > img,
     & > img:hover {
         // Reduce border to make the icon expand.
-        background-color: $brand-primary;
         border-width: 0;
         height: 24px;
         width: 24px;
@@ -3270,7 +3389,20 @@ table th img.iconhelp {
 /* Featured course container. */
 #snap-featured-courses {
     width: 100%;
-    padding: 2em 4%;
+    padding: 1em 4%;
+}
+.snap-featured-courses-heading {
+    padding: 1em 0;
+}
+
+#snap-featured-courses {
+    background-color: $snap-featured-courses;
+}
+#snap-featured-courses a.snap-featured-course {
+    border-radius: 4px;
+}
+#snap-featured-courses .snap-featured-course-title {
+    border-radius: 0 0 4px 4px;
 }
 
 /* Featured course link. */
@@ -3285,9 +3417,10 @@ table th img.iconhelp {
 
     &:hover {
         transform: scale(1.03);
-        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
-        0 3px 1px -2px rgba(0, 0, 0, 0.2),
-        0 1px 5px 0 rgba(0, 0, 0, 0.12);
+        box-shadow:
+            0 2px 2px 0 rgba(0, 0, 0, 0.14),
+            0 3px 1px -2px rgba(0, 0, 0, 0.2),
+            0 1px 5px 0 rgba(0, 0, 0, 0.12);
 
         .snap-featured-course-title {
             text-decoration: underline;
@@ -3352,19 +3485,19 @@ table th img.iconhelp {
 // End Scrolling gradebook fixes
 
 td.mceIframeContainer > iframe {
-    max-width:100%;
+    max-width: 100%;
 }
 
 body.gecko .snap-form-required > fieldset,
 body.gecko .snap-form-advanced > fieldset {
     display: table-cell;
-    max-width:100%;
+    max-width: 100%;
 }
 
 body.ie .snap-form-required > fieldset,
 body.ie .snap-form-advanced > fieldset {
     table-layout: fixed;
-    max-width:100%;
+    max-width: 100%;
 }
 
 .felement.feditor,
@@ -3373,7 +3506,7 @@ table.mceLayout tr,
 td.mceIframeContainer,
 td.mceStatusbar {
     display: block;
-    max-width:100%;
+    max-width: 100%;
 }
 
 table.mceLayout {
@@ -3387,18 +3520,18 @@ table.mceLayout {
 }
 
 table.mceLayout tbody {
-    display:block;
+    display: block;
 }
 
 td.mceToolbar {
     width: 100% !important;
     position: relative;
     display: inline-block;
-    margin: 0px !important;
+    margin: 0 !important;
 }
 
 #page-mod-quiz-edit .instancename {
-    max-width:16px;
+    max-width: 16px;
 }
 
 #page-mod-quiz-edit .activityinstance {
@@ -3408,15 +3541,15 @@ td.mceToolbar {
 
 // General toggle icons.
 button.snap-icon-toggle {
-    &, &:hover, &:link, &:active, &:focus {
-        color: $brand-primary;
+    &,
+    &:hover,
+    &:link,
+    &:active,
+    &:focus {
         background: none;
         border: none;
         box-shadow: none;
         outline: none;
-    }
-    &:focus {
-        border:2px solid $brand-primary;
     }
 }
 
@@ -3430,6 +3563,7 @@ button.snap-icon-toggle {
 
     .btn {
         border-color: transparent;
+        margin-left: 1em;
     }
 }
 
@@ -3447,14 +3581,24 @@ button.snap-icon-toggle {
 }
 
 label[for="snap-coverfiles"],
-#snap-changecoverimageconfirmation button{
+#snap-changecoverimageconfirmation button {
     position: relative;
     display: none;
-    top: -0.5em;
+}
+
+body:not(.pagelayout-coursecategory) {
+    label[for="snap-coverfiles"],
+    #snap-changecoverimageconfirmation button {
+        top: -2.5em;
+    }
+}
+
+#page-course-view-topics #page-header.mast-image .alert-warning {
+    margin-bottom: 2em;
 }
 
 label.state-visible[for="snap-coverfiles"],
-#snap-changecoverimageconfirmation.state-visible button{
+#snap-changecoverimageconfirmation.state-visible button {
     display: inline-block;
     cursor: pointer;
 }
@@ -3471,6 +3615,11 @@ label.state-visible[for="snap-coverfiles"] {
         height: 1.5em;
         width: 1.5em;
     }
+    &.ajaxing:before {
+        @include ajaxing(inline-block, relative, 16px, 4px);
+        margin: 0 0 -3px 0.5em;
+        background: none;
+    }
 }
 
 @include media-breakpoint-down(xs) {
@@ -3483,16 +3632,6 @@ label.state-visible[for="snap-coverfiles"] {
 
 #snap-coverfiles {
     cursor: pointer;
-}
-
-label.state-visible[for="snap-coverfiles"],
-#snap-changecoverimageconfirmation .ok {
-    .spinner-three-quarters {
-        width: 1em;
-        height: 1em;
-        border-width: 0.25em;
-        margin-left: 0.5em;
-    }
 }
 
 #snap-changecoverimageconfirmation.disabled .ok {
@@ -3518,8 +3657,27 @@ label.state-visible[for="snap-coverfiles"],
     opacity: 1;
 }
 
+.snap-alert-cover-image {
+    background-color: white;
+    width: auto;
+    text-align: left;
+    margin: 1em 0;
+}
+
+#snap-changecoverimageconfirmation .ok.ajaxing:after {
+    @include ajaxingwhite(inline-block, relative, 16px, 4px);
+    margin: 0 0 -3px 0.5em;
+}
+
+body.pagelayout-frontpage {
+    .snap-alert-cover-image {
+        margin: 1em 4%;
+    }
+}
+
 #page-badges-criteria {
-    .statusbox, ul.nav-tabs {
+    .statusbox,
+    ul.nav-tabs {
         margin: 1em 0;
     }
 }
@@ -3533,4 +3691,79 @@ label.state-visible[for="snap-coverfiles"],
     overflow: visible;
     clip: auto;
     border: initial;
+}
+
+// Hides 'Blocks editing on' button in all the plagiarism settings pages.
+.path-admin-plagiarism .singlebutton {
+    display: none;
+}
+
+// Adjust the size of the message containers.
+#page-message-index .messaging-area-container .messaging-area .contacts-area .contacts .contact {
+    height: 23%;
+
+    .information .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+// Auth icon align fix.
+#page-login-index .auth-icon,
+#page-site-index .auth-icon,
+#page-site-index .icon{
+    width: 24px;
+    height: 24px;
+    margin: 0;
+}
+
+/* Fix for news visualization in Snap front page. */
+#page-site-index .news-article-content h3 {
+    margin-top: 1em;
+}
+
+#page-site-index #news-articles a.btn.btn-secondary.toggle {
+    border: 1px solid white;
+    margin: 1em 0;
+    color: white;
+
+    &:focus {
+        outline: 3px white;
+    }
+}
+
+// Center prev and next links for activities.
+section#region-main {
+    div.m-t-2.m-b-1 {
+        display: inline-flex;
+        width: 100%;
+
+        .row {
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .col-md-4 {
+            min-height: 8em;
+            text-align: justify;
+
+            .mdl-align {
+                padding: 0 0.5em;
+            }
+        }
+    }
+}
+
+.nav.nav-tabs {
+    .nav-item {
+        margin-left: 0.2em;
+    }
+}
+
+.modal-lg {
+    max-width: 900px;
+}
+
+#id_error_newpassword {
+    color: #d9534f;
 }
